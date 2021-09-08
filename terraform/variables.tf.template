@@ -1,0 +1,42 @@
+variable "sc_env_name" {
+  description = "A short name for the SentinelC environment, suitable to be used in DNS"
+  default = "$SC_ENV_NAME"
+}
+
+variable "sc_base_domain" {
+  description = "Base domain name to use"
+  default = "$SC_BASE_DOMAIN"
+}
+
+variable "do_token" {
+  description = "DigitalOcean API Token"
+  default = "$DO_TOKEN"
+}
+
+variable "do_region" {
+  description = "DigitalOcean Region to use"
+  default = "$DO_REGION"
+}
+
+variable "ssh_ips" {
+  description = "Subnets allowed to SSH in"
+  type    = list(string)
+  default = ["${MY_EXTERNAL_IP}/32"]
+}
+
+# sentinelc.com
+variable "dme_domain" {
+  default = "$DME_DOMAIN_ID"
+}
+
+variable "dme_suffix" {
+  default = ".$SC_ENV_NAME"
+}
+
+variable "dme_api_key" {
+  default = "$DME_API_KEY"
+}
+
+variable "dme_secret_key" {
+  default = "$DME_SECRET_KEY"
+}

@@ -1,0 +1,122 @@
+version: "3"
+
+services:
+  proxy:
+    build: proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./volumes/certbot/conf:/etc/letsencrypt
+      - ./volumes/certbot/www:/var/www/certbot
+    env_file:
+      - ./proxy.env
+    networks:
+      - proxy
+
+  certbot:
+    image: certbot/certbot
+    restart: "no"
+    volumes:
+      - ./volumes/certbot/conf:/etc/letsencrypt
+      - ./volumes/certbot/www:/var/www/certbot
+    entrypoint: "certbot renew"
+
+  api_db:
+    image: postgres:12.6
+    restart: always
+    env_file:
+      - ./api_db.env
+    networks:
+      - django
+
+  api_redis:
+    image: redis:6.0-alpine
+    restart: always
+    networks:
+      - django
+
+  api:
+    image: quay.io/sentinelc/api:${API_TAG}
+    restart: always
+    depends_on:
+      - api_db
+      - api_redis
+    env_file:
+      - ./api.env
+    networks:
+      - proxy
+      - django
+    volumes:
+      - ./volumes/api:/storage
+
+  worker:
+    image: quay.io/sentinelc/api:${API_TAG}
+    restart: always
+    depends_on:
+      - api_db
+      - api_redis
+    env_file:
+      - ./api.env
+    command: python3 manage.py qcluster
+    networks:
+      - django
+    volumes:
+      - ./volumes/api:/storage
+
+  keycloak_db:
+    image: postgres:12.6
+    restart: always
+    env_file:
+      - ./keycloak_db.env
+    networks:
+      - keycloak
+
+  keycloak:
+    image: quay.io/sentinelc/keycloak:${KEYCLOAK_TAG}
+    restart: always
+    depends_on:
+      - keycloak_db
+    env_file:
+      - ./keycloak.env
+    networks:
+      - proxy
+      - keycloak
+
+  front:
+    image: quay.io/sentinelc/front:${FRONT_TAG}
+    restart: always
+    env_file:
+      - ./front.env
+    networks:
+      - proxy
+
+  vpnrouter:
+    image: quay.io/sentinelc/vpnrouter:${VPNROUTER_TAG}
+    restart: always
+    env_file:
+      - ./vpnrouter.env
+    networks:
+      - django
+    cap_add:
+     - NET_ADMIN
+    volumes:
+      - ./volumes/vpnrouter:/etc/wireguard
+    ports:
+      - "20208:20208/udp"
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+
+  portal:
+    image: quay.io/sentinelc/portal:${PORTAL_TAG}
+    restart: always
+    env_file:
+      - ./portal.env
+    networks:
+      - proxy
+
+networks:
+  proxy:  # exposed HTTP services
+  django:  # django + api_db + api_redis
+  keycloak:  # keycloak + keycloak_db

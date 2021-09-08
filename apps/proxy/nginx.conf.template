@@ -1,0 +1,156 @@
+error_log /dev/stderr info;
+worker_processes 1;
+
+events { }
+
+# user nobody nogroup;
+pid /tmp/nginx.pid;
+
+http {
+  include mime.types;
+  default_type application/octet-stream;
+  access_log /dev/stdout combined;
+  sendfile on;
+
+  gzip on;
+
+  set_real_ip_from  127.0.0.0/24;
+  set_real_ip_from  172.17.0.0/24;
+  real_ip_header    X-Forwarded-For;
+  real_ip_recursive on;
+
+  # SSL
+  ssl_session_cache shared:le_nginx_SSL:10m;
+  ssl_session_timeout 1440m;
+  ssl_session_tickets off;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_prefer_server_ciphers off;
+  ssl_ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384";
+
+  server {
+  	listen 80;
+  	root html;
+
+    location /.well-known/acme-challenge/ {
+      root /var/www/certbot/;
+    }
+
+    location / {
+      return 301 https://$host$request_uri;
+    }
+  }
+
+  upstream api {
+    server api:80 fail_timeout=0;
+  }
+
+  upstream keycloak {
+    server keycloak:8080 fail_timeout=0;
+  }
+
+  upstream front {
+    server front:80 fail_timeout=0;
+  }
+
+  server {
+    listen 443 ssl;
+    client_max_body_size 400m;
+    server_name api.$SC_BASE_DOMAIN;
+
+    ssl_certificate /etc/letsencrypt/live/app.$SC_BASE_DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/app.$SC_BASE_DOMAIN/privkey.pem;
+    ssl_dhparam /etc/nginx/dhparam.pem;
+
+    keepalive_timeout 15;
+
+    # 404
+    error_page 404 /404;
+
+    location / {
+      proxy_redirect off;
+      proxy_buffering off;
+      proxy_set_header Host $http_host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_pass http://api;
+    }
+
+  }
+
+  server {
+    listen 443 ssl;
+    server_name accounts.$SC_BASE_DOMAIN;
+
+    ssl_certificate /etc/letsencrypt/live/app.$SC_BASE_DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/app.$SC_BASE_DOMAIN/privkey.pem;
+    ssl_dhparam /etc/nginx/dhparam.pem;
+
+    keepalive_timeout 15;
+
+    # 404
+    error_page 404 /404;
+
+    location / {
+      proxy_redirect off;
+      proxy_buffering off;
+      proxy_set_header Host $http_host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_pass http://keycloak;
+    }
+
+  }
+
+  server {
+    listen 443 ssl;
+    server_name app.$SC_BASE_DOMAIN;
+
+    ssl_certificate /etc/letsencrypt/live/app.$SC_BASE_DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/app.$SC_BASE_DOMAIN/privkey.pem;
+    ssl_dhparam /etc/nginx/dhparam.pem;
+
+    keepalive_timeout 15;
+
+    # 404
+    error_page 404 /404;
+
+    location / {
+      proxy_redirect off;
+      proxy_buffering off;
+      proxy_set_header Host $http_host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_pass http://front;
+    }
+
+  }
+
+  server {
+    listen 443 ssl;
+    server_name portal.$SC_BASE_DOMAIN;
+
+    ssl_certificate /etc/letsencrypt/live/app.$SC_BASE_DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/app.$SC_BASE_DOMAIN/privkey.pem;
+    ssl_dhparam /etc/nginx/dhparam.pem;
+
+    keepalive_timeout 15;
+
+    # 404
+    error_page 404 /404;
+
+    location / {
+      proxy_redirect off;
+      proxy_buffering off;
+      proxy_set_header Host $http_host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_pass http://portal;
+    }
+
+  }
+
+}
