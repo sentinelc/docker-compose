@@ -32,6 +32,7 @@ services:
       - django
     volumes:
       - ./volumes/api_db/backup:/backup
+      - ./volumes/ops:/ops
 
   api_redis:
     image: redis:6.0-alpine
@@ -53,7 +54,7 @@ services:
     volumes:
       - ./volumes/api:/storage
 
-  worker:
+  celery:
     image: quay.io/sentinelc/api:${API_TAG}
     restart: always
     depends_on:
@@ -61,7 +62,21 @@ services:
       - api_redis
     env_file:
       - ./api.env
-    command: python3 manage.py qcluster
+    command: celery -A chinook.api worker -l INFO
+    networks:
+      - django
+    volumes:
+      - ./volumes/api:/storage
+
+  beat:
+    image: quay.io/sentinelc/api:${API_TAG}
+    restart: always
+    depends_on:
+      - api_db
+      - api_redis
+    env_file:
+      - ./api.env
+    command: celery -A chinook.api beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
     networks:
       - django
     volumes:
@@ -76,6 +91,7 @@ services:
       - keycloak
     volumes:
       - ./volumes/keycloak_db/backup:/backup
+      - ./volumes/ops:/ops
 
   keycloak:
     image: quay.io/sentinelc/keycloak:${KEYCLOAK_TAG}
