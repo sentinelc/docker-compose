@@ -42,9 +42,6 @@ export ADMIN_FIRSTNAME=""
 # Lastname of the initial admin user
 export ADMIN_LASTNAME=""
 
-# Enable maintenance mode on the API
-export MAINTENANCE_ON="false"
-
 # Optional Terraform scripts targeting DigitalOcean and DNS Made Easy can be generated if this is set to 1.
 export ENABLE_TERRAFORM="false"
 
@@ -69,3 +66,6 @@ export DME_SECRET_KEY=""
 
 # DNS Made Easy domain ID where subdomains will be created.
 export DME_DOMAIN_ID=""
+
+# Enable maintenance mode on the API
+export MAINTENANCE_ON="false"
