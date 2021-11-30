@@ -30,6 +30,8 @@ services:
       - ./api_db.env
     networks:
       - django
+    volumes:
+      - ./volumes/api_db/backup:/backup
 
   api_redis:
     image: redis:6.0-alpine
@@ -72,6 +74,8 @@ services:
       - ./keycloak_db.env
     networks:
       - keycloak
+    volumes:
+      - ./volumes/keycloak_db/backup:/backup
 
   keycloak:
     image: quay.io/sentinelc/keycloak:${KEYCLOAK_TAG}
