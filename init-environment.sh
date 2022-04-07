@@ -73,16 +73,16 @@ fi
 VM_HOSTNAME="api.${SC_BASE_DOMAIN}"
 export VM_HOSTNAME
 
-KEYCLOAK_ADMIN_PASS=$(pwgen --capitalize --symbols --numerals -r \'\"\\ 64 1)
+KEYCLOAK_ADMIN_PASS=$(pwgen --capitalize --symbols --numerals -r \'\"\\/\`\{\}\~\(\)\[\]\*\&\|\$ 32 1)
 export KEYCLOAK_ADMIN_PASS
 
-DJANGO_SECRET_KEY=$(pwgen --capitalize --symbols --numerals -r \'\"\\ 50 1)
+DJANGO_SECRET_KEY=$(pwgen --capitalize --symbols --numerals -r \'\"\\/\`\{\}\~\(\)\[\]\*\&\|\$ 50 1)
 export DJANGO_SECRET_KEY
 
 API_OIDC_RP_CLIENT_SECRET=$(uuidgen)
 export API_OIDC_RP_CLIENT_SECRET
 
-KEYCLOAK_APICLIENT_PASS=$(pwgen --capitalize --symbols --numerals -r \'\"\\ 64 1)
+KEYCLOAK_APICLIENT_PASS=$(pwgen --capitalize --symbols --numerals -r \'\"\\/\`\{\}\~\(\)\[\]\*\&\|\$ 32 1)
 export KEYCLOAK_APICLIENT_PASS
 
 API_DB_PASSWORD=$(pwgen 64 1)
@@ -94,8 +94,11 @@ export KEYCLOAK_DB_PASSWORD
 VPNROUTER_API_TOKEN=$(pwgen 40 1)
 export VPNROUTER_API_TOKEN
 
-FIRST_USER_TEMP_PASS=$(pwgen --capitalize --symbols --numerals -r \'\"\\ 32 1)
+FIRST_USER_TEMP_PASS=$(pwgen --capitalize --symbols --numerals -r \'\"\\/\`\{\}\~\(\)\[\]\*\&\|\$ 32 1)
 export FIRST_USER_TEMP_PASS
+
+MAINTENANCE_PASS=$(pwgen 8 1)
+export MAINTENANCE_PASS
 
 [ -d "$SC_ENV_NAME" ] && fail "Directory $SC_ENV_NAME already exists."
 
@@ -119,12 +122,14 @@ echo " - Copying docker-compose config files to $SC_ENV_NAME/apps/"
 cp -a apps/ "$SC_ENV_NAME"/
 
 echo " - Creating empty volumes"
-echo "   - ${SC_ENV_NAME}/volumes/certbot/conf"
-mkdir -p "${SC_ENV_NAME}"/volumes/certbot/conf
-echo "   - ${SC_ENV_NAME}/volumes/certbot/www"
-mkdir -p "${SC_ENV_NAME}"/volumes/certbot/www
+echo "   - ${SC_ENV_NAME}/volumes/ssl"
+mkdir -p "${SC_ENV_NAME}"/volumes/ssl
 echo "   - ${SC_ENV_NAME}/volumes/vpnrouter"
 mkdir -p "${SC_ENV_NAME}"/volumes/vpnrouter
+echo "   - ${SC_ENV_NAME}/volumes/keycloak_db/backup"
+mkdir -p "${SC_ENV_NAME}"/volumes/keycloak_db/backup
+echo "   - ${SC_ENV_NAME}/volumes/api_db/backup"
+mkdir -p "${SC_ENV_NAME}"/volumes/api_db/backup
 
 echo " - Generating docker-compose config files from templates"
 cd "$SC_ENV_NAME" || exit
@@ -136,6 +141,7 @@ envsubst < apps/portal.env.template > apps/portal.env
 envsubst < apps/keycloak.env.template > apps/keycloak.env
 envsubst < apps/proxy.env.template > apps/proxy.env
 envsubst < apps/vpnrouter.env.template > apps/vpnrouter.env
+envsubst < apps/logger.env.template > apps/logger.env
 
 echo " - Generating keycloak JSON import file from template"
 envsubst < apps/keycloak/sentinelc.json.template > apps/keycloak/sentinelc.json
