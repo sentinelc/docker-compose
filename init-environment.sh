@@ -41,7 +41,6 @@ checkForBool "SMTP_USE_TLS"
 checkIfSet "SMTP_USER"
 checkIfSet "SMTP_PASS"
 checkForString "ADMIN_EMAIL"
-checkForBool "ENABLE_TERRAFORM"
 checkForBool "MAINTENANCE_ON"
 
 if [[ -n $SMTP_USER && -z $SMTP_PASS ]]; then
@@ -56,18 +55,6 @@ SMTP_AUTH="false"
 if [[ -n $SMTP_USER ]]; then
   SMTP_AUTH="true"
   export SMTP_AUTH
-fi
-
-if [ "$ENABLE_TERRAFORM" = "true" ]; then
-  checkForString "SMTP_DOMAIN"
-  checkForString "DO_TOKEN"
-  checkForString "DO_REGION"
-  checkForString "DME_API_KEY"
-  checkForString "DME_SECRET_KEY"
-  checkForString "DME_DOMAIN_ID"
-
-  MY_EXTERNAL_IP=$(curl -s ifconfig.me)
-  export MY_EXTERNAL_IP
 fi
 
 VM_HOSTNAME="api.${SC_BASE_DOMAIN}"
@@ -146,24 +133,6 @@ envsubst < apps/logger.env.template > apps/logger.env
 echo " - Generating keycloak JSON import file from template"
 envsubst < apps/keycloak/sentinelc.json.template > apps/keycloak/sentinelc.json
 echo ""
-
-if [ "$ENABLE_TERRAFORM" = "true" ]; then
-  echo "Generating terraform scripts..."
-
-  echo " - Creating private ssh key for VM authentification"
-  ssh-keygen -b 2048 -t rsa -f credentials/admin-key -q -N ""
-
-  echo " - Copying terraform scripts"
-  cp -a ../terraform/ ./
-
-  echo " - Generating terraform/cloud-init.sh"
-  envsubst < terraform/cloud-init.sh.template > terraform/cloud-init.sh
-
-  echo " - Generating terraform/variables.tf"
-  envsubst < terraform/variables.tf.template > terraform/variables.tf
-  echo ""
-fi
-
 
 echo "Generating wireguard server key pair..."
 cd apps/vpnrouter/ || exit

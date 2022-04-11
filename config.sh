@@ -43,30 +43,5 @@ export ADMIN_FIRSTNAME=""
 # Lastname of the initial admin user
 export ADMIN_LASTNAME=""
 
-# Optional Terraform scripts targeting DigitalOcean and DNS Made Easy can be generated if this is set to 1.
-export ENABLE_TERRAFORM="false"
-
-#
-# VARIABLES BELOW ARE ONLY REQUIRED IF ENABLE_TERRAFORM is 1
-#
-
-# Use as the rewriteDomain ssmtp configuration, for OS level automated emails.
-export SMTP_DOMAIN=""
-
-# DigitalOcean API token.
-export DO_TOKEN=""
-
-# DigitalOcean region where the VM will be created.
-export DO_REGION=""
-
-# DNS Made Easy api key.
-export DME_API_KEY=""
-
-# DNS Made Easy secret key.
-export DME_SECRET_KEY=""
-
-# DNS Made Easy domain ID where subdomains will be created.
-export DME_DOMAIN_ID=""
-
 # Enable maintenance mode on the API
 export MAINTENANCE_ON="false"
