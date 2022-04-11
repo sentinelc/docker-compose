@@ -13,7 +13,8 @@ export SC_BASE_DOMAIN="sentinelc.example.com"
 export EXTERNAL_IP=""
 
 # Set to True to allow anonymous users to create an account and take ownership of available devices.
-export ENABLE_ONBOARDING="false"
+# At this moment, setting this to false causes the front-end application to crash. Leave true.
+export ENABLE_ONBOARDING="true"
 
 # Outgoing mail server address.
 export SMTP_HOST=""
