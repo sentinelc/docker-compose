@@ -87,39 +87,32 @@ export FIRST_USER_TEMP_PASS
 MAINTENANCE_PASS=$(pwgen 8 1)
 export MAINTENANCE_PASS
 
-[ -d "$SC_ENV_NAME" ] && fail "Directory $SC_ENV_NAME already exists."
+echo "Generating random credentials..."
+mkdir credentials
 
+echo " - credentials/keycloak"
+echo "$KEYCLOAK_ADMIN_PASS" > credentials/keycloak
 
-echo "Generating random credentials under $SC_ENV_NAME/credentials..."
-mkdir -p "$SC_ENV_NAME"/credentials
+echo " - credentials/vpnrouter_api_token"
+echo "$VPNROUTER_API_TOKEN" > credentials/vpnrouter_api_token
 
-echo " - $SC_ENV_NAME/credentials/keycloak"
-echo "$KEYCLOAK_ADMIN_PASS" > "$SC_ENV_NAME"/credentials/keycloak
-
-echo " - $SC_ENV_NAME/credentials/vpnrouter_api_token"
-echo "$VPNROUTER_API_TOKEN" > "$SC_ENV_NAME"/credentials/vpnrouter_api_token
-
-echo " - $SC_ENV_NAME/credentials/login-instructions.txt"
-envsubst < templates/login-instructions.txt.tpl > "$SC_ENV_NAME"/credentials/login-instructions.txt
+echo " - credentials/login-instructions.txt"
+envsubst < templates/login-instructions.txt.tpl > credentials/login-instructions.txt
 echo ""
 
 echo "Generating docker-compose environment..."
 
-echo " - Copying docker-compose config files to $SC_ENV_NAME/apps/"
-cp -a apps/ "$SC_ENV_NAME"/
-
 echo " - Creating empty volumes"
-echo "   - ${SC_ENV_NAME}/volumes/ssl"
-mkdir -p "${SC_ENV_NAME}"/volumes/ssl
-echo "   - ${SC_ENV_NAME}/volumes/vpnrouter"
-mkdir -p "${SC_ENV_NAME}"/volumes/vpnrouter
-echo "   - ${SC_ENV_NAME}/volumes/keycloak_db/backup"
-mkdir -p "${SC_ENV_NAME}"/volumes/keycloak_db/backup
-echo "   - ${SC_ENV_NAME}/volumes/api_db/backup"
-mkdir -p "${SC_ENV_NAME}"/volumes/api_db/backup
+echo "   - apps/volumes/ssl"
+mkdir -p apps/volumes/ssl
+echo "   - apps/volumes/vpnrouter"
+mkdir -p apps/volumes/vpnrouter
+echo "   - apps/volumes/keycloak_db/backup"
+mkdir -p apps/volumes/keycloak_db/backup
+echo "   - apps/volumes/api_db/backup"
+mkdir -p apps/volumes/api_db/backup
 
 echo " - Generating docker-compose config files from templates"
-cd "$SC_ENV_NAME" || exit
 envsubst < apps/api_db.env.template > apps/api_db.env
 envsubst < apps/keycloak_db.env.template > apps/keycloak_db.env
 envsubst < apps/api.env.template > apps/api.env
