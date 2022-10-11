@@ -109,8 +109,12 @@ echo "   - apps/volumes/vpnrouter"
 mkdir -p apps/volumes/vpnrouter
 echo "   - apps/volumes/keycloak_db/backup"
 mkdir -p apps/volumes/keycloak_db/backup
+echo "   - apps/volumes/keycloak_db/data"
+mkdir -p apps/volumes/keycloak_db/data
 echo "   - apps/volumes/api_db/backup"
 mkdir -p apps/volumes/api_db/backup
+echo "   - apps/volumes/api_db/data"
+mkdir -p apps/volumes/api_db/data
 
 echo " - Generating docker-compose config files from templates"
 envsubst < apps/api_db.env.template > apps/api_db.env
