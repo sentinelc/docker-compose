@@ -140,6 +140,8 @@ services:
     restart: always
     networks:
       - logger
+    volumes:
+      - ./volumes/logger_redis:/data
 networks:
   proxy:  # exposed HTTP services
   django:  # django + api_db + api_redis
