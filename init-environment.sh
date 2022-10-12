@@ -115,6 +115,8 @@ echo "   - apps/volumes/api_db/backup"
 mkdir -p apps/volumes/api_db/backup
 echo "   - apps/volumes/api_db/data"
 mkdir -p apps/volumes/api_db/data
+echo "   -apps/volumes/logger_redis/data"
+mkdir -p apps/volumes/logger_redis/data
 
 echo " - Generating docker-compose config files from templates"
 envsubst < apps/api_db.env.template > apps/api_db.env
