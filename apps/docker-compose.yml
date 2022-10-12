@@ -22,8 +22,8 @@ services:
     networks:
       - django
     volumes:
+      - ./volumes/api_db/data:/var/lib/postgresql/data
       - ./volumes/api_db/backup:/backup
-      - volumes/api_db/data:/var/lib/postgresql/data
   api_redis:
     image: redis:6.2.6-alpine
     restart: always
@@ -140,7 +140,6 @@ services:
     restart: always
     networks:
       - logger
-
 networks:
   proxy:  # exposed HTTP services
   django:  # django + api_db + api_redis
