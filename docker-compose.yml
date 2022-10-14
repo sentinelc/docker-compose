@@ -23,7 +23,6 @@ services:
       - django
     volumes:
       - ./volumes/api/postgres:/var/lib/postgresql/data
-      - ./volumes/api/backup:/backup
 
   api_redis:
     image: redis:6.2.6-alpine
@@ -82,7 +81,6 @@ services:
       - keycloak
     volumes:
       - ./volumes/keycloak/postgres:/var/lib/postgresql/data
-      - ./volumes/keycloak/backup:/backup
 
   keycloak:
     image: quay.io/sentinelc/keycloak:${KEYCLOAK_TAG}

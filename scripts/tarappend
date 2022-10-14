@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+# concat stdin to end of tar file, with given name. meuh on stackexchange
+# $Id: tarappend,v 1.3 2015/07/08 11:31:18 meuh $
+
+import sys, os, tarfile, time, copy
+from optparse import OptionParser
+try:
+    import grp, pwd
+except ImportError:
+    grp = pwd = None
+
+usage = """%prog: ... | %prog -t tarfile -f filename
+Appends stdin to tarfile under the given arbitrary filename.
+tarfile is created if it does not exist.\
+"""
+
+def doargs():
+    parser = OptionParser(usage=usage)
+    parser.add_option("-f", "--filename", help="filename to use")
+    parser.add_option("-t", "--tarfile", help="existing tar archive")
+    (options, args) = parser.parse_args()
+    if options.filename is None or options.tarfile is None:
+        parser.error("need filename and tarfile")
+    if len(args):
+        parser.error("unknown args: "+" ".join(args))
+    return options
+
+def copygetlen(fsrc, fdst):
+    """copy data from file-like object fsrc to file-like object fdst. return len"""
+    totlen = 0
+    while 1:
+        buf = fsrc.read(16*1024)
+        if not buf:
+            return totlen
+        fdst.write(buf)
+        totlen += len(buf)
+
+class TarFileStdin(tarfile.TarFile):
+    def addstdin(self, tarinfo, fileobj):
+        """Add stdin to archive. based on addfile() """
+        self._check("aw")
+        tarinfo = copy.copy(tarinfo)
+        buf = tarinfo.tobuf(self.format, self.encoding, self.errors)
+        bufoffset = self.offset
+        self.fileobj.write(buf)
+        self.offset += len(buf)
+
+        tarinfo.size = copygetlen(fileobj, self.fileobj)
+        blocks, remainder = divmod(tarinfo.size, tarfile.BLOCKSIZE)
+        if remainder > 0:
+            self.fileobj.write(tarfile.NUL * (tarfile.BLOCKSIZE - remainder))
+            blocks += 1
+        self.offset += blocks * tarfile.BLOCKSIZE
+        # rewrite header with correct size
+        buf = tarinfo.tobuf(self.format, self.encoding, self.errors)
+        self.fileobj.seek(bufoffset)
+        self.fileobj.write(buf)
+        self.fileobj.seek(self.offset)
+        self.members.append(tarinfo)
+
+class TarInfoStdin(tarfile.TarInfo):
+    def __init__(self, name):
+        if len(name)>100:
+            raise ValueError(name+": filename too long")
+        if name.endswith("/"):
+            raise ValueError(name+": is a directory name")
+        tarfile.TarInfo.__init__(self, name)
+        self.size = 99
+        self.uid = os.getuid()
+        self.gid = os.getgid()
+        self.mtime = time.time()
+        if pwd:
+            self.uname = pwd.getpwuid(self.uid)[0]
+            self.gname = grp.getgrgid(self.gid)[0]
+
+def run(tarfilename, newfilename):
+    tar = TarFileStdin.open(tarfilename, 'a')
+    tarinfo = TarInfoStdin(newfilename)
+    tar.addstdin(tarinfo, sys.stdin.buffer)
+    tar.close()
+
+if __name__ == '__main__':
+    options = doargs()
+    run(options.tarfile, options.filename)
