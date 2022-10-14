@@ -14,10 +14,10 @@ echo "- Backing up non-postgres volumes"
 tar -cpf $BACKUP_DEST --exclude=volumes/api/postgres --exclude=volumes/keycloak/postgres configs/ volumes/ credentials/
 
 echo "- Dumping keycloak db"
-source configs/keycloak_db.env && COMPOSE_INTERACTIVE_NO_CLI=1 docker-compose exec -T keycloak_db pg_dump -Fc -n public -U $POSTGRES_USER | ./scripts/tarappend -f data/keycloak_db.pgdump -t $BACKUP_DEST
+COMPOSE_INTERACTIVE_NO_CLI=1 docker-compose exec -T keycloak_db bash -c "pg_dump -Fc -n public -U \$POSTGRES_USER \$POSTGRES_DB"  | ./scripts/tarappend -f data/keycloak_db.pgdump -t $BACKUP_DEST
 
 echo "- Dumping api db"
-source configs/api_db.env && COMPOSE_INTERACTIVE_NO_CLI=1 docker-compose exec -T api_db pg_dump -Fc -n public -U $POSTGRES_USER  | ./scripts/tarappend -f data/api_db.pgdump -t $BACKUP_DEST
+COMPOSE_INTERACTIVE_NO_CLI=1 docker-compose exec -T api_db bash -c "pg_dump -Fc -n public -U \$POSTGRES_USER \$POSTGRES_DB" | ./scripts/tarappend -f data/api_db.pgdump -t $BACKUP_DEST
 
 echo ""
 echo "Backup complete."
