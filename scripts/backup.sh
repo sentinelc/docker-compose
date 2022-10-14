@@ -11,8 +11,8 @@ BACKUP_DEST="backups/$BACKUP_NAME.tar"
 echo "Creating backup in $BACKUP_DEST"
 
 echo "- Backing up non-postgres volumes"
-sudo tar -cpf $BACKUP_DEST --exclude=volumes/api/postgres --exclude=volumes/keycloak/postgres configs/ volumes/ credentials/
-sudo chown cveilleux:cveilleux $BACKUP_DEST
+tar -cpf $BACKUP_DEST --exclude=volumes/api/postgres --exclude=volumes/keycloak/postgres configs/ volumes/ credentials/
+
 echo "- Dumping keycloak db"
 source configs/keycloak_db.env && COMPOSE_INTERACTIVE_NO_CLI=1 docker-compose exec -T keycloak_db pg_dump -Fc -n public -U $POSTGRES_USER | ./scripts/tarappend -f data/keycloak_db.pgdump -t $BACKUP_DEST
 
