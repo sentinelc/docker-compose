@@ -1,9 +1,11 @@
-Back-end admin site:
-https://api.${SC_BASE_DOMAIN}/admin (Use the Single sign-on button)
+Back-end health status page:
+https://api.${SC_BASE_DOMAIN}/health
 
-Front-end application:
+Main web application:
 https://app.${SC_BASE_DOMAIN}/support
 
+Django admin site
+https://api.${SC_BASE_DOMAIN}/admin (Use the Single sign-on button)
 
 The auto-generated random credentials are:
 
