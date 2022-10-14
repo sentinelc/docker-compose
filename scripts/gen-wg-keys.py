@@ -26,8 +26,8 @@ def generate_wg_keypair():
 
 private_key, public_key = generate_wg_keypair()
 
-write_file("private_key", private_key, "0600", dirname="../volumes/vpnrouter")
-write_file("public_key", public_key, "0600", dirname="../volumes/vpnrouter")
+write_file("private_key", private_key, "0600", dirname="volumes/vpnrouter")
+write_file("public_key", public_key, "0600", dirname="volumes/vpnrouter")
 
 print(" - Private wireguard key saved to ../volumes/vpnrouter/private_key")
 print(" - Public key to import to API server saved to ../volumes/vpnrouter/public_key")

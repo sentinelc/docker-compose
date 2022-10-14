@@ -10,7 +10,7 @@ services:
     volumes:
       - ./volumes/ssl:/ssl
     env_file:
-      - ./proxy.env
+      - ./configs/proxy.env
     networks:
       - proxy
 
@@ -18,12 +18,13 @@ services:
     image: postgres:14.1
     restart: always
     env_file:
-      - ./api_db.env
+      - ./configs/api_db.env
     networks:
       - django
     volumes:
-      - ./volumes/api_db/data:/var/lib/postgresql/data
-      - ./volumes/api_db/backup:/backup
+      - ./volumes/api/postgres:/var/lib/postgresql/data
+      - ./volumes/api/backup:/backup
+
   api_redis:
     image: redis:6.2.6-alpine
     restart: always
@@ -37,12 +38,12 @@ services:
       - api_db
       - api_redis
     env_file:
-      - ./api.env
+      - ./configs/api.env
     networks:
       - proxy
       - django
     volumes:
-      - ./volumes/api:/storage
+      - ./volumes/api/media:/storage
 
   celery:
     image: quay.io/sentinelc/api:${API_TAG}
@@ -51,12 +52,12 @@ services:
       - api_db
       - api_redis
     env_file:
-      - ./api.env
+      - ./configs/api.env
     command: celery -A chinook.api worker -l INFO
     networks:
       - django
     volumes:
-      - ./volumes/api:/storage
+      - ./volumes/api/media:/storage
 
   beat:
     image: quay.io/sentinelc/api:${API_TAG}
@@ -65,22 +66,23 @@ services:
       - api_db
       - api_redis
     env_file:
-      - ./api.env
+      - ./configs/api.env
     command: celery -A chinook.api beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
     networks:
       - django
     volumes:
-      - ./volumes/api:/storage
+      - ./volumes/api/media:/storage
 
   keycloak_db:
     image: postgres:14.1
     restart: always
     env_file:
-      - ./keycloak_db.env
+      - ./configs/keycloak_db.env
     networks:
       - keycloak
     volumes:
-      - ./volumes/keycloak_db/backup:/backup
+      - ./volumes/keycloak/postgres:/var/lib/postgresql/data
+      - ./volumes/keycloak/backup:/backup
 
   keycloak:
     image: quay.io/sentinelc/keycloak:${KEYCLOAK_TAG}
@@ -88,7 +90,7 @@ services:
     depends_on:
       - keycloak_db
     env_file:
-      - ./keycloak.env
+      - ./configs/keycloak.env
     networks:
       - proxy
       - keycloak
@@ -97,7 +99,7 @@ services:
     image: quay.io/sentinelc/front:${FRONT_TAG}
     restart: always
     env_file:
-      - ./front.env
+      - ./configs/front.env
     networks:
       - proxy
 
@@ -105,7 +107,7 @@ services:
     image: quay.io/sentinelc/vpnrouter:${VPNROUTER_TAG}
     restart: always
     env_file:
-      - ./vpnrouter.env
+      - ./configs/vpnrouter.env
     networks:
       - django
       - proxy
@@ -122,7 +124,7 @@ services:
     image: quay.io/sentinelc/portal:${PORTAL_TAG}
     restart: always
     env_file:
-      - ./portal.env
+      - ./configs/portal.env
     networks:
       - proxy
 
@@ -130,7 +132,7 @@ services:
     image: quay.io/sentinelc/logger:${LOGGER_TAG}
     restart: always
     env_file:
-      - ./logger.env
+      - ./configs/logger.env
     networks:
       - proxy
       - logger
@@ -142,9 +144,11 @@ services:
     networks:
       - logger
     volumes:
-      - ./volumes/logger_redis/data:/data
+      - ./volumes/logger/redis:/data
+      
 networks:
   proxy:  # exposed HTTP services
   django:  # django + api_db + api_redis
   keycloak:  # keycloak + keycloak_db
   logger: # logger + loger_redis
+
