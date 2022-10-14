@@ -118,7 +118,8 @@ createVolume "api" "postgres"
 createVolume "api" "backup"
 createVolume "logger" "redis"
 
-echo " - Generating docker-compose config files from templates"
+echo " - Generating docker-compose config files from templates under ./configs"
+mkdir -p configs/
 envsubst < templates/api/api_db.env.template > configs/api_db.env
 envsubst < templates/keycloak/keycloak_db.env.template > configs/keycloak_db.env
 envsubst < templates/api/api.env.template > configs/api.env
@@ -129,12 +130,12 @@ envsubst < templates/proxy/proxy.env.template > configs/proxy.env
 envsubst < templates/vpnrouter/vpnrouter.env.template > configs/vpnrouter.env
 envsubst < templates/logger/logger.env.template > configs/logger.env
 
-echo " - Generating keycloak JSON import file from template"
+echo " - Generating keycloak JSON import file from template under ./tmp/keycloak-config.json"
 mkdir -p tmp
 envsubst < templates/keycloak/keycloak-config.json.template > tmp/keycloak-config.json
 echo ""
 
-echo "Generating wireguard server key pair..."
+echo "Generating wireguard server key pair"
 python3 scripts/gen-wg-keys.py
 echo ""
 
