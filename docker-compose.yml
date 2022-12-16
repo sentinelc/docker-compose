@@ -124,7 +124,7 @@ services:
     ports:
       - "9090:9090"
     env_file:
-      - ./vouch.env
+      - ./configs/vouch.env
     networks:
       - proxy
 
