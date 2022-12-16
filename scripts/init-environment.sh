@@ -75,6 +75,9 @@ export DJANGO_SECRET_KEY
 API_OIDC_RP_CLIENT_SECRET=$(uuidgen)
 export API_OIDC_RP_CLIENT_SECRET
 
+VOUCH_OIDC_RP_CLIENT_SECRET=$(uuidgen)
+export VOUCH_OIDC_RP_CLIENT_SECRET
+
 KEYCLOAK_APICLIENT_PASS=$(pwgen --capitalize --symbols --numerals -r \'\"\\/\`\{\}\~\(\)\[\]\*\&\|\$ 32 1)
 export KEYCLOAK_APICLIENT_PASS
 
@@ -127,6 +130,7 @@ envsubst < templates/keycloak/keycloak.env.template > configs/keycloak.env
 envsubst < templates/proxy/proxy.env.template > configs/proxy.env
 envsubst < templates/vpnrouter/vpnrouter.env.template > configs/vpnrouter.env
 envsubst < templates/logger/logger.env.template > configs/logger.env
+envsubst < templates/vouch/vouch.env.template > configs/vouch.env
 
 echo " - Generating keycloak JSON import file from template under ./tmp/keycloak-config.json"
 mkdir -p tmp

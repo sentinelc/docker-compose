@@ -118,6 +118,16 @@ services:
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
 
+  vouch:
+    image: quay.io/vouch/vouch-proxy:0.37.3
+    restart: always
+    ports:
+      - "9090:9090"
+    env_file:
+      - ./vouch.env
+    networks:
+      - proxy
+
   portal:
     image: quay.io/sentinelc/portal:${PORTAL_TAG}
     restart: always
