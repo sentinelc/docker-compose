@@ -115,9 +115,11 @@ echo " - Creating empty volumes"
 createVolume "ssl"
 createVolume "vpnrouter"
 createVolume "keycloak" "postgres"
+createVolume "keycloak" "import"
 createVolume "api" "media"
 createVolume "api" "postgres"
 createVolume "logger" "redis"
+
 
 echo " - Generating docker-compose config files from templates under ./configs"
 mkdir -p configs/
@@ -131,11 +133,8 @@ envsubst < templates/proxy/proxy.env.template > configs/proxy.env
 envsubst < templates/vpnrouter/vpnrouter.env.template > configs/vpnrouter.env
 envsubst < templates/logger/logger.env.template > configs/logger.env
 envsubst < templates/vouch/vouch.env.template > configs/vouch.env
-
-echo " - Generating keycloak JSON import file from template under ./tmp/keycloak-config.json"
-mkdir -p tmp
-envsubst < templates/keycloak/keycloak-config.json.template > tmp/keycloak-config.json
-echo ""
+envsubst < templates/docs/docs.env.template > configs/docs.env
+envsubst < templates/keycloak/keycloak-config.json.template > volumes/keycloak/import/sentinelc-realm.json
 
 echo "Generating wireguard server key pair"
 python3 scripts/gen-wg-keys.py

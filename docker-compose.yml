@@ -14,6 +14,16 @@ services:
     networks:
       - proxy
 
+  vouch:
+    image: quay.io/vouch/vouch-proxy:0.37.3
+    restart: always
+    ports:
+      - "9090:9090"
+    env_file:
+      - ./configs/vouch.env
+    networks:
+      - proxy
+
   api_db:
     image: postgres:14.1
     restart: always
@@ -23,6 +33,7 @@ services:
       - django
     volumes:
       - ./volumes/api/postgres:/var/lib/postgresql/data
+    shm_size: '2gb'
 
   api_redis:
     image: redis:6.2.6-alpine
@@ -92,6 +103,8 @@ services:
     networks:
       - proxy
       - keycloak
+    volumes:
+      - ./volumes/keycloak/import:/opt/keycloak/data/import
 
   front:
     image: quay.io/sentinelc/front:${FRONT_TAG}
@@ -118,16 +131,6 @@ services:
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
 
-  vouch:
-    image: quay.io/vouch/vouch-proxy:0.37.3
-    restart: always
-    ports:
-      - "9090:9090"
-    env_file:
-      - ./configs/vouch.env
-    networks:
-      - proxy
-
   portal:
     image: quay.io/sentinelc/portal:${PORTAL_TAG}
     restart: always
@@ -153,10 +156,37 @@ services:
       - logger
     volumes:
       - ./volumes/logger/redis:/data
-      
-networks:
-  proxy:  # exposed HTTP services
-  django:  # django + api_db + api_redis
-  keycloak:  # keycloak + keycloak_db
-  logger: # logger + loger_redis
 
+  docs:
+    image: quay.io/sentinelc/docs:${DOCS_TAG}
+    restart: always
+    env_file:
+      - ./configs/docs.env
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.16.0.0/24"
+  django:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.16.1.0/24"
+  keycloak:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.16.2.0/24"
+  logger:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.16.3.0/24"
