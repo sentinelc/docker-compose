@@ -136,6 +136,7 @@ envsubst < templates/vouch/vouch.env.template > configs/vouch.env
 envsubst < templates/docs/docs.env.template > configs/docs.env
 envsubst < templates/keycloak/keycloak-config.json.template > volumes/keycloak/import/sentinelc-realm.json
 
+echo ""
 echo "Generating wireguard server key pair"
 python3 scripts/gen-wg-keys.py
 echo ""
