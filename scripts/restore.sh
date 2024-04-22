@@ -1,5 +1,22 @@
 #!/usr/bin/env bash
 
+# Check if docker-compose is installed
+if command -v docker-compose &> /dev/null; then
+    COMPOSE_COMMAND="docker-compose"
+elif command -v docker &> /dev/null; then
+    # Check if docker compose is available as a separate command
+    if docker compose --help &> /dev/null; then
+        COMPOSE_COMMAND="docker compose"
+    else
+        echo "Error: docker-compose or docker compose not found. Please make sure Docker and docker-compose are installed." >&2
+        exit 1
+    fi
+else
+    echo "Error: Docker not found. Please make sure Docker is installed." >&2
+    exit 1
+fi
+
+
 cd "$(dirname "$0")"/..
 
 BACKUP_FILE=./backups/$1
@@ -7,7 +24,7 @@ BACKUP_FILE=./backups/$1
 echo "Restoring.."
 if [ -f $BACKUP_FILE ]; then
         echo "- Stopping and deconfiguring all running containers.."
-        docker-compose down -v
+        $COMPOSE_COMMAND down -v
 
         echo "- Deleting configs/ & volumes/"
         rm -rf configs/ volumes/
@@ -16,14 +33,14 @@ if [ -f $BACKUP_FILE ]; then
         tar -xvpf $BACKUP_FILE
 
         echo "- Restoring postgresql databases"
-        docker-compose up -d api_db keycloak_db
+        $COMPOSE_COMMAND up -d api_db keycloak_db
         sleep 5
 
         #Wait to be up and ready..
         max_retry=30
         counter=0
 
-        until docker-compose exec api_db bash -c "psql -U \$POSTGRES_USER -d \$POSTGRES_DB -c 'SELECT 1'"
+        until $COMPOSE_COMMAND exec api_db bash -c "psql -U \$POSTGRES_USER -d \$POSTGRES_DB -c 'SELECT 1'"
         do
                 [[ counter -eq $max_retry ]] && echo "Failed!" && exit 1
                 echo "Trying again. Try #$counter"
@@ -31,14 +48,14 @@ if [ -f $BACKUP_FILE ]; then
                 sleep 2
         done
 
-        docker-compose exec -T api_db bash -c "pg_restore -Fc -U \$POSTGRES_USER -d \$POSTGRES_DB" < data/api_db.pgdump
-        docker-compose exec -T keycloak_db bash -c "pg_restore -Fc -U \$POSTGRES_USER -d \$POSTGRES_DB" < data/keycloak_db.pgdump
+        $COMPOSE_COMMAND exec -T api_db bash -c "pg_restore -Fc -U \$POSTGRES_USER -d \$POSTGRES_DB" < data/api_db.pgdump
+        $COMPOSE_COMMAND exec -T keycloak_db bash -c "pg_restore -Fc -U \$POSTGRES_USER -d \$POSTGRES_DB" < data/keycloak_db.pgdump
 
         echo "- Deleting temporary pgdump files."
         rm -rf data/
 
         echo "- Restarting all containers.."
-        docker-compose up -d
+        $COMPOSE_COMMAND up -d
         echo ""
         echo "Restore complete."
 
