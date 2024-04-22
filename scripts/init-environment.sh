@@ -141,5 +141,4 @@ python3 scripts/gen-wg-keys.py
 echo ""
 
 echo "SUCCESS"
-echo "Please follow the guide at https://sentinelc.com/docs/controller/installation/ to finish your installation."
-
+echo "Follow the next steps in the cloud controller installation guide to finish your installation."
