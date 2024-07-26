@@ -72,6 +72,9 @@ export KEYCLOAK_ADMIN_PASS
 DJANGO_SECRET_KEY=$(pwgen --capitalize --symbols --numerals -r \'\"\\/\`\{\}\~\(\)\[\]\*\&\|\$ 50 1)
 export DJANGO_SECRET_KEY
 
+VPNROUTER_HMAC_AUTH_SECRET_KEY=$(pwgen --capitalize --symbols --numerals -r \'\"\\/\`\{\}\~\(\)\[\]\*\&\|\$ 50 1)
+export VPNROUTER_HMAC_AUTH_SECRET_KEY
+
 API_OIDC_RP_CLIENT_SECRET=$(uuidgen)
 export API_OIDC_RP_CLIENT_SECRET
 
