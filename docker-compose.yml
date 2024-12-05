@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   proxy:
     image: quay.io/sentinelc/proxy:${PROXY_TAG}
