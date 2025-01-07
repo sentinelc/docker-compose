@@ -32,6 +32,7 @@ createVolume() {
   mkdir -p volumes/$1/$2
 }
 
+
 # cd to root of project
 cd "${0%/*}"/..
 
@@ -48,6 +49,7 @@ checkIfSet "SMTP_USER"
 checkIfSet "SMTP_PASS"
 checkForString "ADMIN_EMAIL"
 checkForBool "MAINTENANCE_ON"
+checkForString "TZ"
 
 if [[ -n $SMTP_USER && -z $SMTP_PASS ]]; then
   fail "Error: SMTP_USER is set but SMTP_PASS is empty."

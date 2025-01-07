@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
-# Copy this file to config.sh and complet the required configurations.
-# See https://sentinelc.com/docs/controller/config-reference/ for instructions.
+# Copy this file to config.sh and complete the required configurations.
+# See Controller/Config file reference in the documentation for additional instructions.
+
+# Default/server timezone.
+export TZ="America/Toronto"
 
 # Display name for the environment.
 export SC_DISPLAY_NAME="SentinelC demo"
