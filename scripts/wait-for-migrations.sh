@@ -17,12 +17,19 @@ fi
 
 # wait for django migrations to auto-apply after docker-compose up
 
-max_retry=30
+max_retry=10
 counter=0
+
 until $COMPOSE_COMMAND exec -T api ./manage.py migrate --check
 do
-   [[ counter -eq $max_retry ]] && echo "Failed!" && exit 1
-   echo "Trying again. Try #$counter"
    ((counter++))
+   echo "Attempt #$counter failed."
+   if [[ $counter -eq $max_retry ]]; then
+       echo "Giving up. Check docker logs for errors or relaunch this command to continue waiting."
+       exit 1
+   fi
+   echo "Trying again in 10 seconds..."
    sleep 10
 done
+
+echo "SUCCESS: Database is initialized. You can continue with the installation process."
