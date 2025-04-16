@@ -37,7 +37,6 @@ createVolume() {
 cd "${0%/*}"/..
 
 checkForString "SC_DISPLAY_NAME"
-checkForString "SC_ENV_NAME"
 checkForString "SC_BASE_DOMAIN"
 checkForString "EXTERNAL_IP"
 checkForBool "ENABLE_ONBOARDING"

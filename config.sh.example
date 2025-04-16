@@ -9,9 +9,6 @@ export TZ="America/Toronto"
 # Display name for the environment.
 export SC_DISPLAY_NAME="SentinelC demo"
 
-# Short name for the environment. Lowercase alphanumeric only.
-export SC_ENV_NAME="my-sentinelc"
-
 # The parent domain name under which app-specific sub-domains will be created.
 export SC_BASE_DOMAIN="sentinelc.example.com"
 
