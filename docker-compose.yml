@@ -13,7 +13,7 @@ services:
       - proxy
 
   vouch:
-    image: quay.io/vouch/vouch-proxy:0.37.3
+    image: quay.io/vouch/vouch-proxy:${VOUCH_TAG}
     restart: always
     ports:
       - "9090:9090"
@@ -23,7 +23,7 @@ services:
       - proxy
 
   api_db:
-    image: postgres:14.1
+    image: postgres:${POSTGRES_TAG}
     restart: always
     env_file:
       - ./configs/api_db.env
@@ -34,7 +34,7 @@ services:
     shm_size: '2gb'
 
   api_redis:
-    image: redis:6.2.6-alpine
+    image: redis:${REDIS_TAG}
     restart: always
     networks:
       - django
@@ -82,7 +82,7 @@ services:
       - ./volumes/api/media:/storage
 
   keycloak_db:
-    image: postgres:14.1
+    image: postgres:${POSTGRES_TAG}
     restart: always
     env_file:
       - ./configs/keycloak_db.env
@@ -147,7 +147,7 @@ services:
       - logger
 
   logger_redis:
-    image: redis:6.2.6-alpine
+    image: redis:${REDIS_TAG}
     restart: always
     command: redis-server --save 60 1 --loglevel warning
     networks:
