@@ -36,6 +36,6 @@ dtrack:
   script:
     - set -a
     - source .env
-    - VERSION="${VOUCH_TAG%%@*}" DEPENDENCY_TRACK_PROJECT_NAME=vouch-container chinook-dtrack-upload bom-vouch.json
-    - VERSION="${POSTGRES_TAG%%@*}" DEPENDENCY_TRACK_PROJECT_NAME=postgres-container chinook-dtrack-upload bom-postgres.json
-    - VERSION="${REDIS_TAG%%@*}" DEPENDENCY_TRACK_PROJECT_NAME=redis-container chinook-dtrack-upload bom-redis.json
+    - VERSION="${VOUCH_TAG%%@*}" DEPENDENCY_TRACK_PROJECT_NAME=vouch-container chinook-dtrack-upload --force-latest bom-vouch.json
+    - VERSION="${POSTGRES_TAG%%@*}" DEPENDENCY_TRACK_PROJECT_NAME=postgres-container chinook-dtrack-upload --force-latest bom-postgres.json
+    - VERSION="${REDIS_TAG%%@*}" DEPENDENCY_TRACK_PROJECT_NAME=redis-container chinook-dtrack-upload --force-latest bom-redis.json
