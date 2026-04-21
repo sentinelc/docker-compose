@@ -1,0 +1,41 @@
+stages:
+  - syft
+  - dtrack
+
+.base:
+  image: $BUILDER_IMAGE
+  tags:
+    - docker
+
+syft:
+  extends: .base
+  stage: syft
+  script:
+    - set -a
+    - source .env
+    - syft quay.io/vouch/vouch-proxy:${VOUCH_TAG} -o cyclonedx-json > bom-vouch.json
+    - syft postgres:${POSTGRES_TAG} -o cyclonedx-json > bom-postgres.json
+    - syft redis:${REDIS_TAG} -o cyclonedx-json > bom-redis.json
+  artifacts:
+    name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
+    paths:
+      - bom-vouch.json
+      - bom-postgres.json
+      - bom-redis.json
+    expire_in: 16 hours
+
+dtrack:
+  extends: .base
+  variables:
+    DEPENDENCY_TRACK_PROJECT_NAME: sentinelc-keycloak-container
+  stage: dtrack
+  needs:
+    - job: syft
+      artifacts: true
+      optional: false
+  script:
+    - set -a
+    - source .env
+    - VERSION="${VOUCH_TAG%%@*}" DEPENDENCY_TRACK_PROJECT_NAME=vouch-container chinook-dtrack-upload bom-vouch.json
+    - VERSION="${POSTGRES_TAG%%@*}" DEPENDENCY_TRACK_PROJECT_NAME=postgres-container chinook-dtrack-upload bom-postgres.json
+    - VERSION="${REDIS_TAG%%@*}" DEPENDENCY_TRACK_PROJECT_NAME=redis-container chinook-dtrack-upload bom-redis.json
