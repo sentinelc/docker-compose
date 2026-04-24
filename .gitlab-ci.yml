@@ -21,7 +21,7 @@ syft:
     paths:
       - bom-vouch.json
       - bom-postgres.json
-      - bom-redis.json
+      - bom-valkey.json
     expire_in: 16 hours
 
 dtrack:
