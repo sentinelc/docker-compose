@@ -15,7 +15,7 @@ syft:
     - source .env
     - syft quay.io/vouch/vouch-proxy:${VOUCH_TAG} -o cyclonedx-json > bom-vouch.json
     - syft postgres:${POSTGRES_TAG} -o cyclonedx-json > bom-postgres.json
-    - syft redis:${REDIS_TAG} -o cyclonedx-json > bom-redis.json
+    - syft valkey/valkey:${VALKEY_TAG} -o cyclonedx-json > bom-redis.json
   artifacts:
     name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
     paths:

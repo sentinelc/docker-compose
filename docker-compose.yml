@@ -35,7 +35,7 @@ services:
     shm_size: '2gb'
 
   api_redis:
-    image: redis:${REDIS_TAG}
+    image: valkey/valkey:${VALKEY_TAG}
     restart: always
     networks:
       - django
@@ -148,7 +148,7 @@ services:
       - logger
 
   logger_redis:
-    image: redis:${REDIS_TAG}
+    image: valkey/valkey:${VALKEY_TAG}
     restart: always
     command: redis-server --save 60 1 --loglevel warning
     networks:
