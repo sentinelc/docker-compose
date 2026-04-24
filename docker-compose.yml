@@ -7,6 +7,7 @@ services:
       - "443:443"
     volumes:
       - ./volumes/ssl:/ssl
+      - ./volumes/api/media:/storage
     env_file:
       - ./configs/proxy.env
     networks:
