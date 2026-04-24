@@ -15,7 +15,7 @@ syft:
     - source .env
     - syft quay.io/vouch/vouch-proxy:${VOUCH_TAG} -o cyclonedx-json > bom-vouch.json
     - syft postgres:${POSTGRES_TAG} -o cyclonedx-json > bom-postgres.json
-    - syft valkey/valkey:${VALKEY_TAG} -o cyclonedx-json > bom-redis.json
+    - syft valkey/valkey:${VALKEY_TAG} -o cyclonedx-json > bom-valkey.json
   artifacts:
     name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
     paths:
@@ -38,4 +38,4 @@ dtrack:
     - source .env
     - VERSION="${VOUCH_TAG%%@*}" DEPENDENCY_TRACK_PROJECT_NAME=vouch-container chinook-dtrack-upload --force-latest bom-vouch.json
     - VERSION="${POSTGRES_TAG%%@*}" DEPENDENCY_TRACK_PROJECT_NAME=postgres-container chinook-dtrack-upload --force-latest bom-postgres.json
-    - VERSION="${REDIS_TAG%%@*}" DEPENDENCY_TRACK_PROJECT_NAME=redis-container chinook-dtrack-upload --force-latest bom-redis.json
+    - VERSION="${VALKEY_TAG%%@*}" DEPENDENCY_TRACK_PROJECT_NAME=valkey-container chinook-dtrack-upload --force-latest bom-valkey.json
