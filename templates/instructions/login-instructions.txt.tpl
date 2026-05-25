@@ -10,14 +10,6 @@ https://api.${SC_BASE_DOMAIN}/admin (Use the Single sign-on button)
 The auto-generated random credentials are:
 
 Username: ${ADMIN_EMAIL}
-Password: ${FIRST_USER_TEMP_PASS}
+Password: ${ADMIN_PASS}
 
-You will be asked to set a new password after logging in for the first time.
-
-
-An admin user has also been generated for accessing the Keycloak master realm:
-
-https://accounts.${SC_BASE_DOMAIN}/admin/
-
-Username: admin
-Password: ${KEYCLOAK_ADMIN_PASS}
+These credentials should only be used for evaluation purposes. Connecting the built-in Dex authentication server to an external identity provider is recommended.
