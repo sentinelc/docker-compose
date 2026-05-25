@@ -84,7 +84,7 @@ export API_DB_PASSWORD
 VPNROUTER_API_TOKEN=$(pwgen 40 1)
 export VPNROUTER_API_TOKEN
 
-ADMIN_PASS=$(pwgen --capitalize --symbols --numerals -r \'\"\\/\`\{\}\~\(\)\[\]\*\&\|\$ 32 1)
+ADMIN_PASS=$(pwgen --capitalize --symbols --numerals -r \'\"\\/\`\{\}\~\(\)\[\]\*\&\|\$ 12 1)
 export ADMIN_PASS
 
 ADMIN_PASS_HASH=$(echo $ADMIN_PASS | htpasswd -BinC 10 admin | cut -d: -f2)
@@ -116,6 +116,7 @@ createVolume "api" "postgres"
 createVolume "logger" "redis"
 createVolume "dex" "config"
 createVolume "dex" "data"
+chown 1001:1001 volumes/dex/data
 
 echo " - Generating docker-compose config files from templates under ./configs"
 mkdir -p configs/
