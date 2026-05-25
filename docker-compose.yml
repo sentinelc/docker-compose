@@ -82,28 +82,15 @@ services:
     volumes:
       - ./volumes/api/media:/storage
 
-  keycloak_db:
-    image: postgres:${POSTGRES_TAG}
+  dex:
+    image: dexidp/dex:${DEX_TAG}
     restart: always
-    env_file:
-      - ./configs/keycloak_db.env
-    networks:
-      - keycloak
-    volumes:
-      - ./volumes/keycloak/postgres:/var/lib/postgresql/data
-
-  keycloak:
-    image: quay.io/sentinelc/keycloak:${KEYCLOAK_TAG}
-    restart: always
-    depends_on:
-      - keycloak_db
-    env_file:
-      - ./configs/keycloak.env
     networks:
       - proxy
-      - keycloak
+    command: ["dex", "serve", "/etc/dex/config.yaml"]
     volumes:
-      - ./volumes/keycloak/import:/opt/keycloak/data/import
+      - ./volumes/dex/config:/etc/dex
+      - ./volumes/dex/data:/var/dex
 
   front:
     image: quay.io/sentinelc/front:${FRONT_TAG}

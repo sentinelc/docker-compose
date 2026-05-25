@@ -1,0 +1,50 @@
+issuer: https://accounts.${SC_BASE_DOMAIN}
+
+storage:
+  type: sqlite3
+  config:
+    file: /var/dex/dex.db
+
+web:
+  http: 0.0.0.0:5556
+  allowedOrigins: ['https://app.${SC_BASE_DOMAIN}']
+
+# Once you have connected an external IdP, you may comment out this initial user:
+enablePasswordDB: false
+staticPasswords:
+- email: "${ADMIN_EMAIL}"
+  hash: "${ADMIN_PASS_HASH}"
+  username: "${ADMIN_EMAIL}"
+  userID: "${ADMIN_USER_UUID}"
+
+# see Dex documentation to configure your connectors
+#connectors:
+#- type: google
+#  id: google
+#  name: Google
+#  config:
+#    clientID: xxx
+#    clientSecret: xxx
+#    redirectURI: https://accounts.sentinelc.example.org/callback
+
+# Static client so you can test OIDC flow later
+staticClients:
+- id: front
+  public: true
+  name: SentinelC
+  redirectURIs:
+  - https://app.${SC_BASE_DOMAIN}
+- id: django
+  name: SentinelC admin
+  secret: ${API_OIDC_RP_CLIENT_SECRET}
+  redirectURIs:
+  - https://api.${SC_BASE_DOMAIN}/callback/
+- id: app-proxy
+  name: App Proxy
+  secret: ${VOUCH_OIDC_RP_CLIENT_SECRET}
+  redirectURIs:
+  - https://vouch.${SC_BASE_DOMAIN}/auth
+
+# Optional: nicer login UI
+oauth2:
+  skipApprovalScreen: true

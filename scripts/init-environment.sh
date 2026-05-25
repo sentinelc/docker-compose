@@ -39,7 +39,6 @@ cd "${0%/*}"/..
 checkForString "SC_DISPLAY_NAME"
 checkForString "SC_BASE_DOMAIN"
 checkForString "EXTERNAL_IP"
-checkForBool "ENABLE_ONBOARDING"
 checkForString "SMTP_HOST"
 checkForString "SMTP_PORT"
 checkForBool "SMTP_USE_SSL"
@@ -67,9 +66,6 @@ fi
 VM_HOSTNAME="api.${SC_BASE_DOMAIN}"
 export VM_HOSTNAME
 
-KEYCLOAK_ADMIN_PASS=$(pwgen --capitalize --symbols --numerals -r \'\"\\/\`\{\}\~\(\)\[\]\*\&\|\$ 32 1)
-export KEYCLOAK_ADMIN_PASS
-
 DJANGO_SECRET_KEY=$(pwgen --capitalize --symbols --numerals -r \'\"\\/\`\{\}\~\(\)\[\]\*\&\|\$ 50 1)
 export DJANGO_SECRET_KEY
 
@@ -82,29 +78,26 @@ export API_OIDC_RP_CLIENT_SECRET
 VOUCH_OIDC_RP_CLIENT_SECRET=$(uuidgen)
 export VOUCH_OIDC_RP_CLIENT_SECRET
 
-KEYCLOAK_APICLIENT_PASS=$(pwgen --capitalize --symbols --numerals -r \'\"\\/\`\{\}\~\(\)\[\]\*\&\|\$ 32 1)
-export KEYCLOAK_APICLIENT_PASS
-
 API_DB_PASSWORD=$(pwgen 64 1)
 export API_DB_PASSWORD
-
-KEYCLOAK_DB_PASSWORD=$(pwgen 64 1)
-export KEYCLOAK_DB_PASSWORD
 
 VPNROUTER_API_TOKEN=$(pwgen 40 1)
 export VPNROUTER_API_TOKEN
 
-FIRST_USER_TEMP_PASS=$(pwgen --capitalize --symbols --numerals -r \'\"\\/\`\{\}\~\(\)\[\]\*\&\|\$ 32 1)
-export FIRST_USER_TEMP_PASS
+ADMIN_PASS=$(pwgen --capitalize --symbols --numerals -r \'\"\\/\`\{\}\~\(\)\[\]\*\&\|\$ 32 1)
+export ADMIN_PASS
+
+ADMIN_PASS_HASH=$(echo $ADMIN_PASS | htpasswd -BinC 10 admin | cut -d: -f2)
+export ADMIN_PASS_HASH
+
+ADMIN_USER_UUID=$(uuidgen)
+export ADMIN_USER_UUID
 
 MAINTENANCE_PASS=$(pwgen 8 1)
 export MAINTENANCE_PASS
 
 echo "Generating random credentials..."
 mkdir credentials
-
-echo " - credentials/keycloak"
-echo "$KEYCLOAK_ADMIN_PASS" > credentials/keycloak
 
 echo " - credentials/vpnrouter_api_token"
 echo "$VPNROUTER_API_TOKEN" > credentials/vpnrouter_api_token
@@ -118,27 +111,24 @@ echo "Generating docker-compose environment..."
 echo " - Creating empty volumes"
 createVolume "ssl"
 createVolume "vpnrouter"
-createVolume "keycloak" "postgres"
-createVolume "keycloak" "import"
 createVolume "api" "media"
 createVolume "api" "postgres"
 createVolume "logger" "redis"
-
+createVolume "dex" "config"
+createVolume "dex" "data"
 
 echo " - Generating docker-compose config files from templates under ./configs"
 mkdir -p configs/
 envsubst < templates/api/api_db.env.template > configs/api_db.env
-envsubst < templates/keycloak/keycloak_db.env.template > configs/keycloak_db.env
 envsubst < templates/api/api.env.template > configs/api.env
 envsubst < templates/front/front.env.template > configs/front.env
 envsubst < templates/portal/portal.env.template > configs/portal.env
-envsubst < templates/keycloak/keycloak.env.template > configs/keycloak.env
 envsubst < templates/proxy/proxy.env.template > configs/proxy.env
 envsubst < templates/vpnrouter/vpnrouter.env.template > configs/vpnrouter.env
 envsubst < templates/logger/logger.env.template > configs/logger.env
 envsubst < templates/vouch/vouch.env.template > configs/vouch.env
 envsubst < templates/docs/docs.env.template > configs/docs.env
-envsubst < templates/keycloak/keycloak-config.json.template > volumes/keycloak/import/sentinelc-realm.json
+envsubst < templates/dex/config.yaml.template > volumes/dex/config/config.yaml
 
 echo ""
 echo "Generating wireguard server key pair"
