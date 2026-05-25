@@ -10,7 +10,7 @@ web:
   allowedOrigins: ['https://app.${SC_BASE_DOMAIN}']
 
 # Once you have connected an external IdP, you may comment out this initial user:
-enablePasswordDB: false
+enablePasswordDB: true
 staticPasswords:
 - email: "${ADMIN_EMAIL}"
   hash: "${ADMIN_PASS_HASH}"
