@@ -33,7 +33,7 @@ if [ -f $BACKUP_FILE ]; then
         tar -xvpf $BACKUP_FILE
 
         echo "- Restoring postgresql databases"
-        $COMPOSE_COMMAND up -d api_db keycloak_db
+        $COMPOSE_COMMAND up -d api_db
         sleep 5
 
         #Wait to be up and ready..
@@ -53,9 +53,6 @@ if [ -f $BACKUP_FILE ]; then
 
         echo "- Enabling unaccent extension on api_db"
         $COMPOSE_COMMAND exec api_db bash -c "psql -U \$POSTGRES_USER -d \$POSTGRES_DB -c 'CREATE EXTENSION IF NOT EXISTS unaccent'"
-
-        echo "- Restoring keycloak_db"
-        $COMPOSE_COMMAND exec -T keycloak_db bash -c "pg_restore -Fc -U \$POSTGRES_USER -d \$POSTGRES_DB" < data/keycloak_db.pgdump
 
         echo "- Deleting temporary pgdump files."
         rm -rf data/
