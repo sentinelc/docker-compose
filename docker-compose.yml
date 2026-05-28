@@ -83,7 +83,7 @@ services:
       - ./volumes/api/media:/storage
 
   dex:
-    image: dexidp/dex:${DEX_TAG}
+    image: quay.io/sentinelc/dex:${DEX_TAG}
     restart: always
     networks:
       - proxy
