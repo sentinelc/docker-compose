@@ -1,5 +1,8 @@
 issuer: https://accounts.${SC_BASE_DOMAIN}
 
+frontend:
+  issuer: SentinelC
+
 storage:
   type: sqlite3
   config:
