@@ -62,7 +62,7 @@ services:
       - api_redis
     env_file:
       - ./configs/api.env
-    command: celery -A chinook.api worker -l INFO
+    command: /app/scripts/celery-worker.sh
     networks:
       - django
     volumes:
@@ -76,7 +76,7 @@ services:
       - api_redis
     env_file:
       - ./configs/api.env
-    command: celery -A chinook.api beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    command: /app/scripts/celery-beat.sh
     networks:
       - django
     volumes:
