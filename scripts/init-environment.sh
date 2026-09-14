@@ -9,21 +9,21 @@ fail() {
 
 checkIfSet() {
   if ! [[ -v $1 ]]; then
-    fail "Error: environment variable $1 is unset. Please see https://sentinelc.com/docs/controller/config-reference#${1,,}"
+    fail "Error: environment variable $1 is unset. Please see Config file reference in the documentation."
   fi
 }
 
 checkForString() {
   checkIfSet "$1"
   if [[ -z ${!1} ]]; then
-    fail "Error: environment variable $1 is empty. Please see https://sentinelc.com/docs/controller/config-reference#${1,,}"
+    fail "Error: environment variable $1 is empty. Please see Config file reference in the documentation."
   fi
 }
 
 checkForBool() {
   checkIfSet "$1"
   if [[ ${!1} != "true" && ${!1} != "false" && ${!1} != "" ]]; then
-    fail "Error: environment variable $1 should be set to true, false or left empty. Please see https://sentinelc.com/docs/controller/config-reference#${1,,}"
+    fail "Error: environment variable $1 should be set to true, false or left empty. Please see Config file reference in the documentation."
   fi
 }
 
