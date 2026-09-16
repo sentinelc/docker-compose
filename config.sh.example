@@ -12,7 +12,7 @@ export SC_DISPLAY_NAME="SentinelC demo"
 # The parent domain name under which app-specific sub-domains will be created.
 export SC_BASE_DOMAIN="sentinelc.example.com"
 
-# Public IP address where the environment is installed.
+# Public IP address where the environment is installed. Devices connect to the management VPN at this address.
 export EXTERNAL_IP=""
 
 # Outgoing mail server address.

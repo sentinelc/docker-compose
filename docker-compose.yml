@@ -110,8 +110,6 @@ services:
       - proxy
     cap_add:
      - NET_ADMIN
-    volumes:
-      - ./volumes/vpnrouter:/etc/wireguard
     ports:
       - "20208:20208/udp"
     sysctls:

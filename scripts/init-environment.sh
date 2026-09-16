@@ -69,9 +69,6 @@ export VM_HOSTNAME
 DJANGO_SECRET_KEY=$(pwgen --capitalize --symbols --numerals -r \'\"\\/\`\{\}\~\(\)\[\]\*\&\|\$ 50 1)
 export DJANGO_SECRET_KEY
 
-VPNROUTER_HMAC_AUTH_SECRET_KEY=$(pwgen --capitalize --symbols --numerals -r \'\"\\/\`\{\}\~\(\)\[\]\*\&\|\$ 50 1)
-export VPNROUTER_HMAC_AUTH_SECRET_KEY
-
 API_OIDC_RP_CLIENT_SECRET=$(uuidgen)
 export API_OIDC_RP_CLIENT_SECRET
 
@@ -110,7 +107,6 @@ echo "Generating docker-compose environment..."
 
 echo " - Creating empty volumes"
 createVolume "ssl"
-createVolume "vpnrouter"
 createVolume "api" "media"
 createVolume "api" "postgres"
 createVolume "logger" "redis"
@@ -130,11 +126,6 @@ envsubst < templates/logger/logger.env.template > configs/logger.env
 envsubst < templates/vouch/vouch.env.template > configs/vouch.env
 envsubst < templates/docs/docs.env.template > configs/docs.env
 envsubst < templates/dex/config.yaml.template > volumes/dex/config/config.yaml
-
-echo ""
-echo "Generating wireguard server key pair"
-python3 scripts/gen-wg-keys.py
-echo ""
 
 echo "SUCCESS"
 echo "Follow the next steps in the cloud controller installation guide to finish your installation."
