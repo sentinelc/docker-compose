@@ -46,6 +46,9 @@ services:
       - api_redis
     env_file:
       - ./configs/api.env
+    environment:
+      # The image binds to loopback by default; the proxy is a separate container here.
+      GUNICORN_LISTEN: 0.0.0.0:5000
     networks:
       - proxy
       - django
@@ -103,6 +106,9 @@ services:
     restart: always
     env_file:
       - ./configs/vpnrouter.env
+    environment:
+      # The image binds its http proxy to loopback by default; the api container reaches it over the network.
+      NGINX_LISTEN_ADDRESS: 0.0.0.0
     networks:
       - django
       - proxy
@@ -126,6 +132,9 @@ services:
     restart: always
     env_file:
       - ./configs/logger.env
+    environment:
+      # The image binds to loopback by default; the proxy is a separate container here.
+      HOST: 0.0.0.0
     networks:
       - proxy
       - logger
