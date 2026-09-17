@@ -26,8 +26,6 @@ syft:
 
 dtrack:
   extends: .base
-  variables:
-    DEPENDENCY_TRACK_PROJECT_NAME: sentinelc-keycloak-container
   stage: dtrack
   needs:
     - job: syft
