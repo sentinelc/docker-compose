@@ -49,8 +49,8 @@ AUTO_VPNROUTER_NAME=vpnrouter
 AUTO_VPNROUTER_TOKEN=<content of credentials/vpnrouter_api_token>
 ```
 
-Optional: `GUNICORN_LISTEN` (default `0.0.0.0:5000`) and `CELERY_WORKERS` (default `2`) can be set to tune
-the containers; the existing `GUNICORN_WORKERS` keeps working.
+Optional: `CELERY_WORKERS` (default `2`) sets the concurrency of the background workers, the same way the
+existing `GUNICORN_WORKERS` does for the api.
 
 Remove:
 
@@ -86,10 +86,9 @@ API_TOKEN=<content of credentials/vpnrouter_api_token>
 API_ENDPOINT_HOST=api.<domain>
 ENDPOINT_IP=<public IP of the server, your EXTERNAL_IP>
 VOUCH_ENDPOINT=https://vouch.<domain>
-NGINX_LISTEN_ADDRESS=0.0.0.0
 ```
 
-Added: `ENDPOINT_IP` (required), `VOUCH_ENDPOINT`, `NGINX_LISTEN_ADDRESS`.
+Added: `ENDPOINT_IP` (required), `VOUCH_ENDPOINT`.
 Removed: `PRIVATE_KEY`, `SC_BASE_DOMAIN`, `HMAC_AUTH_SECRET_KEY`.
 
 `ENDPOINT_IP` is the address appliances connect to. Use the static public IP. The values `lan` and `public`
@@ -128,15 +127,9 @@ meant for evaluation setups only.
 The file must end up as:
 
 ```
-HOST=0.0.0.0
 API_URL=https://api.<domain>
 REDIS_URL=redis://logger_redis/
 ```
-
-Added: `HOST=0.0.0.0` (required under docker-compose). The logger now binds to `127.0.0.1` by default,
-since it is meant to be reached only through the proxy; under docker-compose the proxy is a separate
-container, so the logger must listen on all interfaces of its own network namespace. Without it, the proxy
-gets a 502 on `logs.<domain>` and the health page reports the logger as failed.
 
 Removed: `PORT=3030`. The logger always listens on 3030; the variable is no longer read.
 
@@ -179,6 +172,11 @@ Provided by the pulled project. Compared to v21:
 
 - `celery` and `beat` run `/app/scripts/celery-worker.sh` and `/app/scripts/celery-beat.sh`.
 - The `vpnrouter` service no longer mounts `./volumes/vpnrouter:/etc/wireguard`.
+- The v22 images of the api, logger and vpn router bind to loopback by default: they are meant to be reached
+  only through the proxy, and in the all-in-one pod every service shares one network namespace. Under
+  docker-compose the proxy is a separate container, so the compose file sets `GUNICORN_LISTEN=0.0.0.0:5000`
+  on `api`, `HOST=0.0.0.0` on `logger` and `NGINX_LISTEN_ADDRESS=0.0.0.0` on `vpnrouter`. These are not
+  tunable and do not belong in `configs/*.env`; if you had added one there, it is harmless but redundant.
 - The `vouch` service no longer publishes port 9090 on the host. The proxy and the vpn router reach it over
   the internal docker network; the host port was an oversight.
 
@@ -239,8 +237,8 @@ Logger and api:
 
 - The appliance log endpoint is `<LOGGER_ENDPOINT>/logs/post/<device_id>`; the logger also serves
   `/logs/version`, used by the health page.
-- The logger binds to `127.0.0.1:3030` by default. `HOST=0.0.0.0` is required under docker-compose; `PORT`
-  is no longer read.
+- The api, logger and vpn router bind to loopback by default (`GUNICORN_LISTEN`, `HOST`,
+  `NGINX_LISTEN_ADDRESS`); `docker-compose.yml` overrides them. The logger's `PORT` is no longer read.
 - `MAINTENANCE_ON` no longer gates traffic in the api, which only uses it to alter its behaviour;
   `MAINTENANCE_PASS` is removed from `api.env`. The gate now lives in the proxy (`MAINTENANCE_ON` and
   `MAINTENANCE_PASS` in `proxy.env`) and covers every backend, not only the api.
