@@ -16,8 +16,6 @@ services:
   vouch:
     image: quay.io/vouch/vouch-proxy:${VOUCH_TAG}
     restart: always
-    ports:
-      - "9090:9090"
     env_file:
       - ./configs/vouch.env
     networks:
