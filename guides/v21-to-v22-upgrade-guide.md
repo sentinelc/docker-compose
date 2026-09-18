@@ -52,8 +52,7 @@ Differences you should apply, and why they exist:
   in `front.env`. With `MAINTENANCE_ON=true` every backend answers 503 unless the request carries the cookie
   `maintenance_pass=<MAINTENANCE_PASS>`; the front keeps its own maintenance page.
 - `logger.env`: `PORT` is no longer read; the logger always listens on 3030.
-- `vouch.env`: `VOUCH_COOKIE_SECURE=true`. Everything is served over https, so this only prevents the session
-  cookie from ever being sent over plain http. The client id and OAuth URLs are the dex ones.
+- `vouch.env`: the client id and OAuth URLs are the dex ones.
 - `front.env`: the front no longer derives its endpoints from `SENTINELC_DOMAIN`; each `*_BASE_URL` and the
   two `OIDC_*` variables are given explicitly, which is what lets the same image run in the all-in-one pod.
   All of them are required. `ENABLE_ONBOARDING` is no longer read.
