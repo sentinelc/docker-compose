@@ -28,7 +28,7 @@ BACKUP_DEST="backups/$BACKUP_NAME.tar"
 echo "Creating backup in $BACKUP_DEST"
 
 echo "- Backing up non-postgres volumes"
-tar -cpf $BACKUP_DEST --exclude=volumes/api/postgres configs/ volumes/ credentials/
+tar -cpf $BACKUP_DEST --exclude=volumes/api/postgres --exclude=volumes/api/postgresql configs/ volumes/ credentials/
 
 echo "- Dumping api db"
 COMPOSE_INTERACTIVE_NO_CLI=1 $COMPOSE_COMMAND exec -T api_db bash -c "pg_dump -Fc -n public -U \$POSTGRES_USER \$POSTGRES_DB" | ./scripts/tarappend -f data/api_db.pgdump -t $BACKUP_DEST
