@@ -69,3 +69,81 @@ check_external_database_url() {
     return 1
   fi
 }
+
+# env_file_value FILE KEY: value of KEY=... in an env file (empty when the file or key is missing)
+env_file_value() {
+  [[ -f "$1" ]] || return 0
+  grep -m1 "^$2=" "$1" | cut -d= -f2- || true
+}
+
+# set_env_value FILE KEY VALUE: replaces KEY=... in an env file, or appends it. VALUE is written as is.
+set_env_value() {
+  KEY=$2 VALUE=$3 awk -F= '
+    BEGIN { k = ENVIRON["KEY"]; v = ENVIRON["VALUE"] }
+    $1 == k { print k "=" v; done = 1; next }
+    { print }
+    END { if (!done) print k "=" v }' "$1" > "$1.tmp"
+  cat "$1.tmp" > "$1"
+  rm -f "$1.tmp"
+}
+
+# url_decode STRING: decodes %xx
+url_decode() {
+  printf '%b' "${1//%/\\x}"
+}
+
+# export_libpq_env URL SSL_REQUIRE: exports PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE, PGSSLMODE and
+# PGSSLROOTCERT for URL, SSL_REQUIRE being the DATABASE_SSL_REQUIRE of configs/api.env. Clients then get the
+# credentials from their environment, not from their command line, which `ps` shows.
+# TLS follows dj-database-url, like the api: SSL_REQUIRE True forces sslmode=require.
+export_libpq_env() {
+  local url=$1 ssl_require=$2 userinfo hostport query option key value
+  if [[ "$url" == *\\* ]] \
+      || ! [[ "$url" =~ ^postgres(ql)?://([^@/]+)@([^/?]+)/([^?]+)(\?(.*))?$ ]]; then
+    echo "Error: DATABASE_URL is not postgresql://USER:PASSWORD@HOST[:PORT]/DATABASE[?OPTIONS]." >&2
+    return 1
+  fi
+  userinfo=${BASH_REMATCH[2]}
+  hostport=${BASH_REMATCH[3]}
+  PGDATABASE=$(url_decode "${BASH_REMATCH[4]}")
+  query=${BASH_REMATCH[6]}
+
+  PGUSER=$(url_decode "${userinfo%%:*}")
+  PGPASSWORD=""
+  [[ "$userinfo" != *:* ]] || PGPASSWORD=$(url_decode "${userinfo#*:}")
+  if [[ "$hostport" =~ ^(.+):([0-9]+)$ ]]; then
+    PGHOST=$(url_decode "${BASH_REMATCH[1]}")
+    PGPORT=${BASH_REMATCH[2]}
+  else
+    PGHOST=$(url_decode "$hostport")
+    PGPORT=5432
+  fi
+
+  PGSSLMODE=prefer
+  unset PGSSLROOTCERT
+  local IFS='&'
+  for option in $query; do
+    key=${option%%=*}
+    value=$(url_decode "${option#*=}")
+    case $key in
+      sslmode) PGSSLMODE=$value ;;
+      sslrootcert) PGSSLROOTCERT=$value; export PGSSLROOTCERT ;;
+      *) echo "Error: the scripts do not support the option $key of DATABASE_URL." >&2; return 1 ;;
+    esac
+  done
+  [[ "$ssl_require" != "True" ]] || PGSSLMODE=require
+  export PGHOST PGPORT PGUSER PGPASSWORD PGDATABASE PGSSLMODE
+}
+
+# pg_client_init: sets PG_CLIENT, a throwaway PostgreSQL client container (the postgres image of .env) that
+# connects with the variables of export_libpq_env, and PG_TOOLS, the same image without them.
+pg_client_init() {
+  local image
+  image="postgres:$(env_file_value .env POSTGRES_TAG)"
+  if [[ -n "${PGSSLROOTCERT:-}" ]]; then
+    echo "Error: DATABASE_URL sets sslrootcert, a path in the api container. The scripts cannot use it yet." >&2
+    return 1
+  fi
+  PG_CLIENT=(docker run --rm -i -e PGHOST -e PGPORT -e PGUSER -e PGPASSWORD -e PGDATABASE -e PGSSLMODE "$image")
+  PG_TOOLS=(docker run --rm -i "$image")
+}
