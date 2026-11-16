@@ -44,3 +44,10 @@ export ADMIN_LASTNAME=""
 
 # Enable maintenance mode on the API
 export MAINTENANCE_ON="false"
+
+# Optional external PostgreSQL database for the api, for example a managed database. Leave empty to use the
+# built-in api_db service.
+# Format: postgresql://USER:PASSWORD@HOST:PORT/DATABASE. Percent-encode special characters of the password
+# (for example @ is %40, # is %23, % is %25). TLS is required (sslmode=require) unless the URL sets its own
+# sslmode, for example ?sslmode=verify-full&sslrootcert=<path in the api container>.
+export EXTERNAL_DATABASE_URL=""

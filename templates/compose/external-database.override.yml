@@ -1,0 +1,12 @@
+# External database mode: copied to docker-compose.override.yml (ignored by git), which Compose reads after
+# docker-compose.yml.
+#
+# api_db is moved to a profile that is never activated, so `docker compose up -d` does not start it. api, celery
+# and beat depend on it with `required: false`. Its volume and configs/api_db.env, if any, are left as is.
+#
+# Delete docker-compose.override.yml to go back to the built-in database.
+
+services:
+  api_db:
+    profiles:
+      - builtin-database-disabled

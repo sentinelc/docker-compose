@@ -15,6 +15,11 @@ else
 fi
 
 
+cd "$(dirname "$0")"/..
+
+# shellcheck source=scripts/lib/database.sh
+source scripts/lib/database.sh
+
 # wait for django migrations to auto-apply after docker-compose up
 
 max_retry=10
@@ -26,6 +31,10 @@ do
    echo "Attempt #$counter failed."
    if [[ $counter -eq $max_retry ]]; then
        echo "Giving up. Check docker logs for errors or relaunch this command to continue waiting."
+       if is_external_database; then
+           echo "The api uses an external database: check that this server is allowed to connect to it (trusted"
+           echo "sources, TLS) and the DATABASE_URL of configs/api.env."
+       fi
        exit 1
    fi
    echo "Trying again in 10 seconds..."

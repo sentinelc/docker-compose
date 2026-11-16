@@ -42,8 +42,12 @@ services:
     image: quay.io/sentinelc/api:${API_TAG}
     restart: always
     depends_on:
-      - api_db
-      - api_redis
+      # Not required: the external database mode disables api_db (see templates/compose/).
+      api_db:
+        condition: service_started
+        required: false
+      api_redis:
+        condition: service_started
     env_file:
       - ./configs/api.env
     environment:
@@ -59,8 +63,12 @@ services:
     image: quay.io/sentinelc/api:${API_TAG}
     restart: always
     depends_on:
-      - api_db
-      - api_redis
+      # Not required: the external database mode disables api_db (see templates/compose/).
+      api_db:
+        condition: service_started
+        required: false
+      api_redis:
+        condition: service_started
     env_file:
       - ./configs/api.env
     command: /app/scripts/celery-worker.sh
@@ -73,8 +81,12 @@ services:
     image: quay.io/sentinelc/api:${API_TAG}
     restart: always
     depends_on:
-      - api_db
-      - api_redis
+      # Not required: the external database mode disables api_db (see templates/compose/).
+      api_db:
+        condition: service_started
+        required: false
+      api_redis:
+        condition: service_started
     env_file:
       - ./configs/api.env
     command: /app/scripts/celery-beat.sh

@@ -19,6 +19,14 @@ fi
 
 cd "$(dirname "$0")"/..
 
+# shellcheck source=scripts/lib/database.sh
+source scripts/lib/database.sh
+if is_external_database; then
+    echo "Error: configs/api.env points the api to an external database. This script only restores the built-in" >&2
+    echo "api_db service. Use the backups of your database provider, or pg_dump/pg_restore against DATABASE_URL." >&2
+    exit 1
+fi
+
 BACKUP_FILE=./backups/$1
 
 echo "Restoring.."
