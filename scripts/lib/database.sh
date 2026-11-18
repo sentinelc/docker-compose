@@ -178,3 +178,23 @@ SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
 WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p', 'v', 'm', 'S', 'f')
   AND NOT EXISTS (SELECT 1 FROM pg_depend d
                   WHERE d.classid = 'pg_class'::regclass AND d.objid = c.oid AND d.deptype = 'e');"
+
+# external_target_problem: checks, with PG_CLIENT, what the api needs in the external database: unaccent, and the
+# right to create tables in schema public. Prints the problem and returns 1, or returns 1 silently if psql failed.
+external_target_problem() {
+  local unaccent create
+  unaccent=$("${PG_CLIENT[@]}" psql -X -At -v ON_ERROR_STOP=1 \
+    -c "SELECT count(*) FROM pg_extension WHERE extname = 'unaccent'" < /dev/null) || return 1
+  if [[ "$unaccent" != 1 ]]; then
+    echo "unaccent is not installed in $PGDATABASE, and the api user may not be allowed to create it on a managed
+service. As the admin user of the database: \\c $PGDATABASE, then CREATE EXTENSION unaccent;"
+    return 1
+  fi
+  create=$("${PG_CLIENT[@]}" psql -X -At -v ON_ERROR_STOP=1 \
+    -c "SELECT has_schema_privilege('public', 'CREATE')" < /dev/null) || return 1
+  if [[ "$create" != t ]]; then
+    echo "$PGUSER cannot create tables in schema public of $PGDATABASE. As the admin user of the database:
+ALTER DATABASE $PGDATABASE OWNER TO $PGUSER;"
+    return 1
+  fi
+}

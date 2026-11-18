@@ -32,7 +32,7 @@ fail() {
 # restore_external URL SSL_REQUIRE: restores the backup into the external database at URL. The installation
 # keeps using it: the DATABASE_URL of the backup, which can be a built-in one, is not restored.
 restore_external() {
-        local url=$1 ssl_require=$2 version tables answer
+        local url=$1 ssl_require=$2 version tables answer problem
         export_libpq_env "$url" "$ssl_require" || exit 1
         pg_client_init || exit 1
         target_psql() { "${PG_CLIENT[@]}" psql -X -At -v ON_ERROR_STOP=1 "$@"; }
@@ -40,12 +40,11 @@ restore_external() {
         echo "- Checking the external database $PGHOST:$PGPORT/$PGDATABASE"
         version=$(target_psql -c "SHOW server_version" < /dev/null) \
                 || fail "cannot connect to $PGHOST:$PGPORT/$PGDATABASE as $PGUSER (error above). Nothing was changed."
-        [ "$(target_psql -c "SELECT count(*) FROM pg_extension WHERE extname = 'unaccent'" < /dev/null)" = 1 ] \
-                || fail "the unaccent extension is not installed in $PGDATABASE, and the api user cannot create it
-on a managed service. As an admin user of the database: \\c $PGDATABASE, then CREATE EXTENSION unaccent;
-Nothing was changed."
+        problem=$(external_target_problem) \
+                || fail "${problem:-cannot query $PGDATABASE (error above).} Nothing was changed."
         tables=$(target_psql -c "$COUNT_PUBLIC_SQL" < /dev/null)
-        echo "  PostgreSQL $version, unaccent installed, $tables table(s), view(s) or sequence(s) in schema public."
+        echo "  PostgreSQL $version, unaccent installed, $PGUSER can create tables, $tables table(s), view(s) or"
+        echo "  sequence(s) in schema public."
 
         if [ "$tables" != 0 ]; then
                 echo ""

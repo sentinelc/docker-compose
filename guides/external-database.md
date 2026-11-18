@@ -21,26 +21,23 @@ does not need `scripts/migrate-postgres-18.sh` first.
 
 ## 1. Prepare the database
 
-1. As the admin user of the database service (`doadmin` on Digital Ocean), with `psql`, create a user for the
-   api, for example `sentinelc`, and a database `api` that it owns. Do not use the admin user for the api.
-   Create `unaccent` too: the api user may not be allowed to on a managed service.
+1. Create a user for the api, for example `sentinelc`, and a database `api`. On Digital Ocean, use the
+   *Users & Databases* tab of the cluster: this is the tested way. Do not use the admin user (`doadmin`) for the
+   api.
+2. As the admin user, with `psql`, make sure that `unaccent` exists in the database. The api user may not be
+   allowed to create it on a managed service:
 
    ```
-   CREATE ROLE sentinelc LOGIN;
-   \password sentinelc
-   GRANT sentinelc TO doadmin;
-   CREATE DATABASE api OWNER sentinelc;
    \c api
    CREATE EXTENSION IF NOT EXISTS unaccent;
    ```
 
-   The admin user of a managed service is not a superuser. Since PostgreSQL 16, it can give a database only to a
-   role it can act as, hence the `GRANT`, and it can grant only roles it created. Create the user with SQL as
-   above, not in the web console: `ALTER DATABASE api OWNER TO <user>` fails with
-   `must be able to SET ROLE` for a user created by another role. (Checked on PostgreSQL 17 with a
-   non-superuser admin, not on Digital Ocean itself.)
-2. Allow connections from the public IP address of the server only (*Trusted sources* on Digital Ocean).
-3. Check the connection limit of the plan. The api keeps its connections open (up to 10 minutes): one per gunicorn
+   The api user must also be able to create tables in schema `public`. The scripts check both before they write
+   anything (see the connection check below). If the check reports that the api user cannot create tables, make
+   it the owner of the database, as the admin user: `ALTER DATABASE api OWNER TO sentinelc;`. On other services,
+   this can fail with `must be able to SET ROLE` if the admin user did not create the api user.
+3. Allow connections from the public IP address of the server only (*Trusted sources* on Digital Ocean).
+4. Check the connection limit of the plan. The api keeps its connections open (up to 10 minutes): one per gunicorn
    worker (`GUNICORN_WORKERS`, 3), one per celery worker (`CELERY_WORKERS`, 2) plus one, and one for beat. Count
    about ten connections with the default settings, as the migrations at startup, `backup.sh` and `manage.py`
    commands open their own.
@@ -58,8 +55,8 @@ The connection uses TLS (`sslmode=require`): it is encrypted, but the server cer
 is why the trusted sources matter. A URL can set its own `sslmode`, but the scripts do not support `sslrootcert`
 yet, so `verify-full` is not available.
 
-Check the connection from the server. On an empty database, this prints the server version, then
-`Nothing to do.`. It asks for the URL without echoing it:
+Check the connection from the server. On an empty database, this prints the server version and checks `unaccent`
+and the right to create tables, then prints `Nothing to do.`. It asks for the URL without echoing it:
 
 ```
 ./scripts/move-local-db-to-remote.sh --empty-target

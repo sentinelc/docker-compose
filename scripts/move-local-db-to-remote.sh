@@ -105,8 +105,13 @@ version=$(target_psql -c "SHOW server_version" < /dev/null) || fail "cannot conn
 tables=$(target_psql -c "$COUNT_PUBLIC_SQL" < /dev/null)
 echo "   - PostgreSQL $version, $tables table(s), view(s) or sequence(s) in schema public."
 
+if [[ $MODE == empty && "$tables" == 0 ]]; then
+    problem=$(external_target_problem) || fail "${problem:-cannot query $TARGET (error above).}"
+    echo "   - unaccent installed, $PGUSER can create tables. Nothing to do."
+    exit 0
+fi
+
 if [[ $MODE == empty ]]; then
-    [[ "$tables" != 0 ]] || { echo "Nothing to do."; exit 0; }
     [[ -t 0 ]] || fail "this needs a confirmation: run it from a terminal, with TARGET_DATABASE_URL set."
     echo
     echo "This DELETES the $tables table(s), view(s) and sequence(s) of schema public in $TARGET."
@@ -117,11 +122,10 @@ if [[ $MODE == empty ]]; then
     exit 0
 fi
 
-[[ "$(target_psql -c "SELECT count(*) FROM pg_extension WHERE extname = 'unaccent'" < /dev/null)" == 1 ]] \
-    || fail "unaccent is not installed in $PGDATABASE. As an admin user: \\c $PGDATABASE, then CREATE EXTENSION unaccent;"
+problem=$(external_target_problem) || fail "${problem:-cannot query $TARGET (error above).}"
 [[ "$tables" == 0 ]] \
     || fail "schema public of $PGDATABASE is not empty. Empty it first: $0 --empty-target"
-echo "   - unaccent installed, schema public empty."
+echo "   - unaccent installed, $PGUSER can create tables, schema public empty."
 
 # --- source ----------------------------------------------------------------------------------------------------
 echo "2. Finding the source"
