@@ -29,36 +29,6 @@ fail() {
         exit 1
 }
 
-# Drops what the api created in schema public: tables (with their sequences and indexes), views and sequences,
-# but not the objects of extensions such as unaccent, which the api user cannot create again on a managed service.
-EMPTY_PUBLIC_SQL="
-DO \$\$
-DECLARE r record;
-BEGIN
-  FOR r IN
-    SELECT format('%I.%I', n.nspname, c.relname) AS name, c.relkind
-    FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-    WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p', 'v', 'm', 'S', 'f')
-      AND NOT EXISTS (SELECT 1 FROM pg_depend d
-                      WHERE d.classid = 'pg_class'::regclass AND d.objid = c.oid AND d.deptype = 'e')
-    -- Tables first: they take their sequences (serial, identity) with them, which cannot be dropped alone.
-    ORDER BY CASE c.relkind WHEN 'p' THEN 0 WHEN 'r' THEN 1 WHEN 'f' THEN 2 WHEN 'm' THEN 3 WHEN 'v' THEN 4 ELSE 5 END
-  LOOP
-    EXECUTE format('DROP %s IF EXISTS %s CASCADE',
-                   CASE r.relkind WHEN 'v' THEN 'VIEW' WHEN 'm' THEN 'MATERIALIZED VIEW' WHEN 'S' THEN 'SEQUENCE'
-                                  WHEN 'f' THEN 'FOREIGN TABLE' ELSE 'TABLE' END,
-                   r.name);
-  END LOOP;
-END
-\$\$;"
-
-# Number of relations of schema public that EMPTY_PUBLIC_SQL drops
-COUNT_PUBLIC_SQL="
-SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p', 'v', 'm', 'S', 'f')
-  AND NOT EXISTS (SELECT 1 FROM pg_depend d
-                  WHERE d.classid = 'pg_class'::regclass AND d.objid = c.oid AND d.deptype = 'e');"
-
 # restore_external URL SSL_REQUIRE: restores the backup into the external database at URL. The installation
 # keeps using it: the DATABASE_URL of the backup, which can be a built-in one, is not restored.
 restore_external() {
