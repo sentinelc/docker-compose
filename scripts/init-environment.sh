@@ -1,4 +1,20 @@
 #!/usr/bin/env bash
+#
+# init-environment.sh
+#
+# Creates the configuration of a new installation from the variables of config.sh (source it first, see
+# config.sh.example): random credentials in credentials/, configs/*.env from templates/, and empty volumes/. Run
+# it once: it fails if credentials/ exists.
+#
+# The api database:
+#   built-in  EXTERNAL_DATABASE_URL empty (the default): the api_db service, with a random password in
+#             configs/api_db.env and its data in volumes/api/postgresql.
+#   external  EXTERNAL_DATABASE_URL set: configs/api.env points the api to it, docker-compose.override.yml is
+#             copied from templates/compose/external-database.override.yml to disable api_db, and neither
+#             configs/api_db.env nor volumes/api/postgresql is created. The database must be prepared first: see
+#             guides/external-database.md. Fails if docker-compose.override.yml already exists.
+#
+# Usage: source config.sh && scripts/init-environment.sh
 
 set -e
 

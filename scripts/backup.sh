@@ -1,4 +1,19 @@
 #!/usr/bin/env bash
+#
+# backup.sh
+#
+# Backs up the installation into backups/sentinelc-<hostname>-<date>.tar: configs/, volumes/ (except the
+# PostgreSQL data, volumes/api/postgres and volumes/api/postgresql), credentials/, and a pg_dump of schema public
+# of the api database in data/api_db.pgdump. Restore it with scripts/restore.sh.
+#
+# The database mode is read from the DATABASE_URL of configs/api.env:
+#   built-in  pg_dump runs in the api_db service, which must be running.
+#   external  pg_dump runs in a throwaway PostgreSQL client container (the postgres image of .env), with the
+#             credentials in its environment, not on its command line. See guides/external-database.md.
+#
+# The archive has the same format in both modes. If the dump fails, the incomplete archive is deleted.
+#
+# Usage: scripts/backup.sh
 
 set -eo pipefail
 

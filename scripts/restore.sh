@@ -1,4 +1,24 @@
 #!/usr/bin/env bash
+#
+# restore.sh
+#
+# Restores a backup made by scripts/backup.sh. It replaces configs/ and volumes/ with those of the backup, restores
+# the api database, then starts all the containers.
+#
+# The database to restore into is the DATABASE_URL of configs/api.env, or on a new host (no configs/ yet) the one
+# of the backup:
+#   built-in  `docker compose down -v`, deletes configs/ and volumes/, then restores into a new api_db service.
+#             A backup made in external mode is refused.
+#   external  Checks the connection, unaccent and the right to create tables first. If schema public is not
+#             empty, asks to type the database name (needs a terminal). Then `docker compose down` (not -v), and
+#             deletes configs/ and volumes/ except volumes/api/postgres and volumes/api/postgresql, kept for a
+#             rollback to the built-in database. The external DATABASE_URL and DATABASE_SSL_REQUIRE are kept in
+#             configs/api.env, and docker-compose.override.yml is created if missing. Emptying schema public and
+#             the restore run in one transaction: if the restore fails, the database is left as it was. A backup
+#             made in built-in mode can be restored this way. See guides/external-database.md.
+#
+# Usage: scripts/restore.sh <backup file name in backups/>
+#        scripts/restore.sh                                  lists the backups
 
 # Check if docker-compose is installed
 if command -v docker-compose &> /dev/null; then
