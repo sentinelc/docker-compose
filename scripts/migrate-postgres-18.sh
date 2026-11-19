@@ -61,6 +61,12 @@ trap cleanup EXIT
 
 echo "1. Checks"
 
+# shellcheck source=scripts/lib/database.sh
+source scripts/lib/database.sh
+if is_external_database; then
+    fail "configs/api.env points the api to an external database: there is no built-in database to migrate."
+fi
+
 old_version=$(cat "$OLD_DIR/PG_VERSION" 2> /dev/null) \
     || fail "cannot read $OLD_DIR/PG_VERSION. Run this script as root, from an installation that ran PostgreSQL 14."
 [ "$old_version" = "14" ] || fail "$OLD_DIR holds PostgreSQL $old_version data, expected 14."

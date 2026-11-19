@@ -27,6 +27,9 @@ syft:
 dtrack:
   extends: .base
   stage: dtrack
+  # Uploads the SBOMs as the latest version of each project: only for the default branch.
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   needs:
     - job: syft
       artifacts: true

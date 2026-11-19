@@ -6,3 +6,4 @@ scripts/*.jar
 volumes/
 tmp/
 backups/
+docker-compose.override.yml

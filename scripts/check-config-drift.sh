@@ -10,6 +10,10 @@
 #
 #   configs/*.env               <- templates/*/*.env.template
 #   volumes/dex/config/config.yaml <- templates/dex/config.yaml.template
+#   docker-compose.override.yml <- templates/compose/external-database.override.yml (external database only)
+#
+# The database mode (built-in api_db service or external) is read from the DATABASE_URL of configs/api.env, so
+# an installation switched to an external database by hand is checked as such.
 #
 # A difference is not necessarily a mistake: it can be a deliberate customization (a dex connector, a tuned
 # worker count) or a template that changed in a newer version of this project. Review each hunk.
@@ -31,6 +35,8 @@ fail() {
 
 # shellcheck disable=1091
 source ./config.sh
+# shellcheck source=scripts/lib/database.sh
+source scripts/lib/database.sh
 
 # --- recover the secrets generated at install time from the files in use -------------------------------
 # read_value FILE KEY: value of KEY=... in an env file (empty when the file or key is missing)
@@ -54,9 +60,23 @@ VPNROUTER_API_TOKEN=$(cat credentials/vpnrouter_api_token 2>/dev/null || read_va
 ADMIN_PASS_HASH=$(read_yaml_quoted volumes/dex/config/config.yaml hash)
 ADMIN_USER_UUID=$(read_yaml_quoted volumes/dex/config/config.yaml userID)
 
+# DATABASE_URL: the built-in one is rebuilt from its password, an external one holds its own password.
+DATABASE_URL=$(current_database_url)
+if database_url_is_external "$DATABASE_URL"; then
+  external_database=true
+  # config.sh wins when it names the external database, to catch a configs/api.env that was not updated.
+  [[ -z "${EXTERNAL_DATABASE_URL:-}" ]] || DATABASE_URL=$EXTERNAL_DATABASE_URL
+  # As init-environment.sh: sslmode=require is added when the URL sets none, so a URL without TLS shows as drift.
+  database_url_problem=$(check_external_database_url "$DATABASE_URL") || true
+  DATABASE_URL=$(external_database_url "$DATABASE_URL")
+else
+  external_database=false
+  [[ -z "$API_DB_PASSWORD" ]] || DATABASE_URL=$(builtin_database_url "$API_DB_PASSWORD")
+fi
+
 # A secret that could not be recovered renders as a visible marker so the diff points at it.
 for var in DJANGO_SECRET_KEY API_OIDC_RP_CLIENT_SECRET API_DB_PASSWORD VOUCH_OIDC_RP_CLIENT_SECRET \
-           MAINTENANCE_PASS VPNROUTER_API_TOKEN ADMIN_PASS_HASH ADMIN_USER_UUID; do
+           MAINTENANCE_PASS VPNROUTER_API_TOKEN ADMIN_PASS_HASH ADMIN_USER_UUID DATABASE_URL; do
   [[ -n "${!var}" ]] || printf -v "$var" '%s' "<unrecovered secret: $var>"
   export "$var"
 done
@@ -80,8 +100,29 @@ declare -A PAIRS=(
   [templates/dex/config.yaml.template]=volumes/dex/config/config.yaml
 )
 
+if $external_database; then
+  # init-environment.sh does not write configs/api_db.env for an external database. One left from the built-in
+  # database (kept for a rollback) is still checked.
+  [[ -f configs/api_db.env ]] || unset 'PAIRS[templates/api/api_db.env.template]'
+  PAIRS[$EXTERNAL_DATABASE_OVERRIDE]=docker-compose.override.yml
+fi
+
 drifted=0
 clean=0
+
+if [[ -n "${database_url_problem:-}" ]]; then
+  echo "DRIFT    the DATABASE_URL of the external database cannot be used: $database_url_problem"
+  echo
+  drifted=$((drifted + 1))
+fi
+
+if ! $external_database && [[ -f docker-compose.override.yml ]] \
+    && diff -q "$EXTERNAL_DATABASE_OVERRIDE" docker-compose.override.yml > /dev/null; then
+  echo "DRIFT    docker-compose.override.yml disables the api_db service, but configs/api.env uses it."
+  echo "         Delete docker-compose.override.yml, or set the DATABASE_URL of the external database."
+  echo
+  drifted=$((drifted + 1))
+fi
 for template in $(printf '%s\n' "${!PAIRS[@]}" | sort); do
   current=${PAIRS[$template]}
   expected="$RENDER_DIR/$current"

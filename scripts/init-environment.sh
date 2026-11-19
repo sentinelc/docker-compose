@@ -1,4 +1,21 @@
 #!/usr/bin/env bash
+#
+# init-environment.sh
+#
+# Creates the configuration of a new installation from the variables of config.sh (source it first, see
+# config.sh.example): random credentials in credentials/, configs/*.env from templates/, and empty volumes/. Run
+# it once: it fails if credentials/ exists.
+#
+# The api database:
+#   built-in  EXTERNAL_DATABASE_URL empty (the default): the api_db service, with a random password in
+#             configs/api_db.env and its data in volumes/api/postgresql.
+#   external  EXTERNAL_DATABASE_URL set: configs/api.env points the api to it, with sslmode=require added
+#             when the URL sets no sslmode (sslmode values without TLS are refused). docker-compose.override.yml is
+#             copied from templates/compose/external-database.override.yml to disable api_db, and neither
+#             configs/api_db.env nor volumes/api/postgresql is created. The database must be prepared first: see
+#             guides/external-database.md. Fails if docker-compose.override.yml already exists.
+#
+# Usage: source config.sh && scripts/init-environment.sh
 
 set -e
 
@@ -36,6 +53,9 @@ createVolume() {
 # cd to root of project
 cd "${0%/*}"/..
 
+# shellcheck source=scripts/lib/database.sh
+source scripts/lib/database.sh
+
 checkForString "SC_DISPLAY_NAME"
 checkForString "SC_BASE_DOMAIN"
 checkForString "EXTERNAL_IP"
@@ -57,6 +77,17 @@ if [[ -n $SMTP_PASS && -z $SMTP_USER ]]; then
   fail "Error: SMTP_PASS is set but SMTP_USER is empty."
 fi
 
+# Optional, and absent from config.sh files written before it existed: empty keeps the built-in database.
+EXTERNAL_DATABASE_URL=${EXTERNAL_DATABASE_URL:-}
+if [[ -n $EXTERNAL_DATABASE_URL ]]; then
+  reason=$(check_external_database_url "$EXTERNAL_DATABASE_URL") \
+    || fail "Error: EXTERNAL_DATABASE_URL cannot be used: $reason"
+
+  if [[ -e docker-compose.override.yml ]]; then
+    fail "Error: docker-compose.override.yml already exists. The external database mode needs its own, see $EXTERNAL_DATABASE_OVERRIDE."
+  fi
+fi
+
 SMTP_AUTH="false"
 if [[ -n $SMTP_USER ]]; then
   SMTP_AUTH="true"
@@ -75,8 +106,14 @@ export API_OIDC_RP_CLIENT_SECRET
 VOUCH_OIDC_RP_CLIENT_SECRET=$(uuidgen)
 export VOUCH_OIDC_RP_CLIENT_SECRET
 
-API_DB_PASSWORD=$(pwgen 64 1)
-export API_DB_PASSWORD
+if [[ -n $EXTERNAL_DATABASE_URL ]]; then
+  DATABASE_URL=$(external_database_url "$EXTERNAL_DATABASE_URL")
+else
+  API_DB_PASSWORD=$(pwgen 64 1)
+  export API_DB_PASSWORD
+  DATABASE_URL=$(builtin_database_url "$API_DB_PASSWORD")
+fi
+export DATABASE_URL
 
 VPNROUTER_API_TOKEN=$(pwgen 40 1)
 export VPNROUTER_API_TOKEN
@@ -108,7 +145,9 @@ echo "Generating docker-compose environment..."
 echo " - Creating empty volumes"
 createVolume "ssl"
 createVolume "api" "media"
-createVolume "api" "postgresql"
+if [[ -z $EXTERNAL_DATABASE_URL ]]; then
+  createVolume "api" "postgresql"
+fi
 createVolume "logger" "redis"
 createVolume "dex" "config"
 createVolume "dex" "data"
@@ -116,7 +155,9 @@ chown 1001:1001 volumes/dex/data
 
 echo " - Generating docker-compose config files from templates under ./configs"
 mkdir -p configs/
-envsubst < templates/api/api_db.env.template > configs/api_db.env
+if [[ -z $EXTERNAL_DATABASE_URL ]]; then
+  envsubst < templates/api/api_db.env.template > configs/api_db.env
+fi
 envsubst < templates/api/api.env.template > configs/api.env
 envsubst < templates/front/front.env.template > configs/front.env
 envsubst < templates/portal/portal.env.template > configs/portal.env
@@ -126,6 +167,11 @@ envsubst < templates/logger/logger.env.template > configs/logger.env
 envsubst < templates/vouch/vouch.env.template > configs/vouch.env
 envsubst < templates/docs/docs.env.template > configs/docs.env
 envsubst < templates/dex/config.yaml.template > volumes/dex/config/config.yaml
+
+if [[ -n $EXTERNAL_DATABASE_URL ]]; then
+  echo " - External database: docker-compose.override.yml disables the api_db service"
+  cp "$EXTERNAL_DATABASE_OVERRIDE" docker-compose.override.yml
+fi
 
 echo "SUCCESS"
 echo "Follow the next steps in the cloud controller installation guide to finish your installation."
