@@ -51,9 +51,10 @@ postgresql://sentinelc:PASSWORD@HOST:PORT/api
 Percent-encode the special characters of the password: `@` is `%40`, `#` is `%23`, `%` is `%25`, `/` is `%2F`,
 `:` is `%3A`, `?` is `%3F`, `$` is `%24`. The scripts refuse a URL with unencoded `$ " ' \` \ #` or spaces.
 
-The connection uses TLS (`sslmode=require`): it is encrypted, but the server certificate is not verified. That
-is why the trusted sources matter. A URL can set its own `sslmode`, but the scripts do not support `sslrootcert`
-yet, so `verify-full` is not available.
+The connection uses TLS: the scripts add `?sslmode=require` to a URL that sets no `sslmode`, and refuse
+`sslmode=disable`, `allow` and `prefer`. `require` encrypts the connection, but does not verify the server
+certificate: it does not detect a server that impersonates the database. `verify-full`, with the CA certificate of
+the cluster, is not supported yet (sentinel-c/gestion#2001).
 
 Check the connection from the server. On an empty database, this prints the server version and checks `unaccent`
 and the right to create tables, then prints `Nothing to do.`. It asks for the URL without echoing it:
@@ -121,15 +122,15 @@ fix the cause and run it again, or roll back.
 1. Stop the built-in database: `docker compose stop api_db`. `docker compose up -d` does not stop an `api_db`
    container that is already running.
 2. Keep a copy of the current configuration, for a rollback: `cp configs/api.env configs/api.env.builtin`.
-3. In `configs/api.env`, set:
+3. In `configs/api.env`, set `DATABASE_URL`, with `sslmode=require`:
 
    ```
-   DATABASE_URL=postgresql://sentinelc:PASSWORD@HOST:PORT/api
-   DATABASE_SSL_REQUIRE=True
+   DATABASE_URL=postgresql://sentinelc:PASSWORD@HOST:PORT/api?sslmode=require
    ```
 
-   Use `DATABASE_SSL_REQUIRE=False` only if the URL sets its own `sslmode`: `True` replaces it with `require`.
-4. In `config.sh`, set `EXTERNAL_DATABASE_URL` to the same URL. `check-config-drift.sh` compares them.
+   Leave `DATABASE_SSL_REQUIRE=False`: `True` would replace the `sslmode` of the URL.
+4. In `config.sh`, set `EXTERNAL_DATABASE_URL` to the same URL. `check-config-drift.sh` compares them, and reports
+   a `DATABASE_URL` without `sslmode`.
 5. Disable `api_db`:
 
    ```

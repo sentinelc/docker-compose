@@ -9,7 +9,8 @@
 # The api database:
 #   built-in  EXTERNAL_DATABASE_URL empty (the default): the api_db service, with a random password in
 #             configs/api_db.env and its data in volumes/api/postgresql.
-#   external  EXTERNAL_DATABASE_URL set: configs/api.env points the api to it, docker-compose.override.yml is
+#   external  EXTERNAL_DATABASE_URL set: configs/api.env points the api to it, with sslmode=require added
+#             when the URL sets no sslmode (sslmode values without TLS are refused). docker-compose.override.yml is
 #             copied from templates/compose/external-database.override.yml to disable api_db, and neither
 #             configs/api_db.env nor volumes/api/postgresql is created. The database must be prepared first: see
 #             guides/external-database.md. Fails if docker-compose.override.yml already exists.
@@ -106,14 +107,13 @@ VOUCH_OIDC_RP_CLIENT_SECRET=$(uuidgen)
 export VOUCH_OIDC_RP_CLIENT_SECRET
 
 if [[ -n $EXTERNAL_DATABASE_URL ]]; then
-  DATABASE_URL=$EXTERNAL_DATABASE_URL
+  DATABASE_URL=$(external_database_url "$EXTERNAL_DATABASE_URL")
 else
   API_DB_PASSWORD=$(pwgen 64 1)
   export API_DB_PASSWORD
   DATABASE_URL=$(builtin_database_url "$API_DB_PASSWORD")
 fi
-DATABASE_SSL_REQUIRE=$(database_ssl_require "$DATABASE_URL")
-export DATABASE_URL DATABASE_SSL_REQUIRE
+export DATABASE_URL
 
 VPNROUTER_API_TOKEN=$(pwgen 40 1)
 export VPNROUTER_API_TOKEN

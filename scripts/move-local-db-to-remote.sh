@@ -92,7 +92,7 @@ if [[ -z "${TARGET_DATABASE_URL:-}" ]]; then
 fi
 [[ -n "$TARGET_DATABASE_URL" ]] || fail "no target: set TARGET_DATABASE_URL or give the URL on standard input."
 reason=$(check_external_database_url "$TARGET_DATABASE_URL") || fail "the target URL cannot be used: $reason"
-export_libpq_env "$TARGET_DATABASE_URL" "$(database_ssl_require "$TARGET_DATABASE_URL")" || exit 1
+export_libpq_env "$(external_database_url "$TARGET_DATABASE_URL")" False || exit 1
 pg_client_init || exit 1
 TARGET="$PGHOST:$PGPORT/$PGDATABASE"
 

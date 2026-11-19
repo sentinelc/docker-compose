@@ -66,12 +66,13 @@ if database_url_is_external "$DATABASE_URL"; then
   external_database=true
   # config.sh wins when it names the external database, to catch a configs/api.env that was not updated.
   [[ -z "${EXTERNAL_DATABASE_URL:-}" ]] || DATABASE_URL=$EXTERNAL_DATABASE_URL
+  # As init-environment.sh: sslmode=require is added when the URL sets none, so a URL without TLS shows as drift.
+  database_url_problem=$(check_external_database_url "$DATABASE_URL") || true
+  DATABASE_URL=$(external_database_url "$DATABASE_URL")
 else
   external_database=false
   [[ -z "$API_DB_PASSWORD" ]] || DATABASE_URL=$(builtin_database_url "$API_DB_PASSWORD")
 fi
-DATABASE_SSL_REQUIRE=$(database_ssl_require "$DATABASE_URL")
-export DATABASE_SSL_REQUIRE
 
 # A secret that could not be recovered renders as a visible marker so the diff points at it.
 for var in DJANGO_SECRET_KEY API_OIDC_RP_CLIENT_SECRET API_DB_PASSWORD VOUCH_OIDC_RP_CLIENT_SECRET \
@@ -108,6 +109,12 @@ fi
 
 drifted=0
 clean=0
+
+if [[ -n "${database_url_problem:-}" ]]; then
+  echo "DRIFT    the DATABASE_URL of the external database cannot be used: $database_url_problem"
+  echo
+  drifted=$((drifted + 1))
+fi
 
 if ! $external_database && [[ -f docker-compose.override.yml ]] \
     && diff -q "$EXTERNAL_DATABASE_OVERRIDE" docker-compose.override.yml > /dev/null; then

@@ -36,16 +36,18 @@ is_external_database() {
   database_url_is_external "$(current_database_url)"
 }
 
-# database_ssl_require URL: the DATABASE_SSL_REQUIRE value for URL.
-# dj-database-url replaces the sslmode of the URL with "require" when DATABASE_SSL_REQUIRE is True. An sslmode in
-# the URL (for example verify-full) is only honored with False.
-database_ssl_require() {
-  if ! database_url_is_external "$1"; then
-    echo "False"
-  elif [[ "$1" =~ [?\&]sslmode= ]]; then
-    echo "False"
+# The sslmode values accepted for an external database: all of them require TLS.
+EXTERNAL_DATABASE_SSLMODES="require verify-ca verify-full"
+
+# external_database_url URL: URL with sslmode=require added when it sets no sslmode. The TLS mode is in the URL,
+# and DATABASE_SSL_REQUIRE stays False: with True, dj-database-url replaces the sslmode of the URL with require.
+external_database_url() {
+  if [[ "$1" =~ [?\&]sslmode= ]]; then
+    echo "$1"
+  elif [[ "$1" == *\?* ]]; then
+    echo "$1&sslmode=require"
   else
-    echo "True"
+    echo "$1?sslmode=require"
   fi
 }
 
@@ -66,6 +68,11 @@ check_external_database_url() {
   fi
   if ! database_url_is_external "$url"; then
     echo "it points to the built-in api_db service. Leave EXTERNAL_DATABASE_URL empty to use it."
+    return 1
+  fi
+  if [[ "$url" =~ [?\&]sslmode=([^&]*) && " $EXTERNAL_DATABASE_SSLMODES " != *" ${BASH_REMATCH[1]} "* ]]; then
+    echo "sslmode=${BASH_REMATCH[1]} does not require TLS. Leave sslmode out (require is added) or use one of:
+$EXTERNAL_DATABASE_SSLMODES."
     return 1
   fi
 }
@@ -94,7 +101,8 @@ url_decode() {
 
 # export_libpq_env URL SSL_REQUIRE: exports PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE, PGSSLMODE and
 # PGSSLROOTCERT for URL, SSL_REQUIRE being the DATABASE_SSL_REQUIRE of configs/api.env. PG_CLIENT passes them to
-# the client container. TLS follows dj-database-url, like the api: SSL_REQUIRE True forces sslmode=require.
+# the client container. TLS follows dj-database-url, like the api: the sslmode of the URL, which SSL_REQUIRE True
+# replaces with require.
 export_libpq_env() {
   local url=$1 ssl_require=$2 userinfo hostport query option key value
   if [[ "$url" == *\\* ]] \
