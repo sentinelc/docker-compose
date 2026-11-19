@@ -7,8 +7,9 @@
 #
 # The database to restore into is the DATABASE_URL of configs/api.env, or on a new host (no configs/ yet) the one
 # of the backup:
-#   built-in  `docker compose down -v`, deletes configs/ and volumes/, then restores into a new api_db service.
-#             A backup made in external mode is refused.
+#   built-in  `docker compose down -v`, deletes configs/ and volumes/ except volumes/api/postgres (the
+#             PostgreSQL 14 data kept by migrate-postgres-18.sh for a rollback), then restores into a new api_db
+#             service. A backup made in external mode is refused.
 #   external  Checks the connection, unaccent and the right to create tables first. If schema public is not
 #             empty, asks to type the database name (needs a terminal). Then `docker compose down` (not -v), and
 #             deletes configs/ and volumes/ except volumes/api/postgres and volumes/api/postgresql, kept for a
@@ -154,8 +155,14 @@ the built-in api_db service. Restore it with configs/api.env pointing to an exte
         echo "- Stopping and deconfiguring all running containers.."
         $COMPOSE_COMMAND down -v
 
-        echo "- Deleting configs/ & volumes/"
-        rm -rf configs/ volumes/
+        # volumes/api/postgresql is the database being restored: it is recreated. volumes/api/postgres, the
+        # PostgreSQL 14 data kept by migrate-postgres-18.sh for a rollback, is kept: backups do not contain it.
+        echo "- Deleting configs/ & volumes/, except volumes/api/postgres"
+        rm -rf configs/
+        if [ -d volumes ]; then
+                find volumes -mindepth 1 -maxdepth 1 ! -name api -exec rm -rf {} +
+                [ ! -d volumes/api ] || find volumes/api -mindepth 1 -maxdepth 1 ! -name postgres -exec rm -rf {} +
+        fi
 
         echo "- Extracting your backup file: $1"
         tar -xvpf $BACKUP_FILE
@@ -164,11 +171,12 @@ the built-in api_db service. Restore it with configs/api.env pointing to an exte
         $COMPOSE_COMMAND up -d api_db
         sleep 5
 
-        #Wait to be up and ready..
+        # Wait over TCP: on a new data directory, the image first runs a temporary server on the Unix socket only,
+        # then restarts it.
         max_retry=30
         counter=0
 
-        until $COMPOSE_COMMAND exec api_db bash -c "psql -U \$POSTGRES_USER -d \$POSTGRES_DB -c 'SELECT 1'"
+        until $COMPOSE_COMMAND exec -T api_db bash -c 'pg_isready -q -h 127.0.0.1 -U "$POSTGRES_USER"'
         do
                 [[ counter -eq $max_retry ]] && echo "Failed!" && exit 1
                 echo "Trying again. Try #$counter"
