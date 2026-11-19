@@ -12,10 +12,10 @@
 #     recreates it after `git pull`, or 18);
 #   - otherwise the PostgreSQL 14 data in volumes/api/postgres, read with a temporary PostgreSQL 14 container.
 #
-# Target: the TARGET_DATABASE_URL environment variable, or the first line of standard input (a hidden prompt on a
-# terminal). Same format as EXTERNAL_DATABASE_URL in config.sh. It is never a command-line argument: those are
-# visible in the process list. The target database must exist, be owned by the target user, have unaccent created
-# by an admin user, and be empty (schema public): see "Prepare the database" in guides/external-database.md.
+# Target: the TARGET_DATABASE_URL environment variable, or the first line of standard input (a prompt on a
+# terminal). Same format as EXTERNAL_DATABASE_URL in config.sh. The target database must exist, be owned by the
+# target user, have unaccent created by an admin user, and be empty (schema public): see "Prepare the database" in
+# guides/external-database.md.
 #
 # The dump is a consistent snapshot, but the api keeps writing after it. For the final copy, stop the writers
 # first: docker compose stop api celery beat. A copy while the api runs is fine for a rehearsal.

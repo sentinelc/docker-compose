@@ -8,8 +8,8 @@
 #
 # The database mode is read from the DATABASE_URL of configs/api.env:
 #   built-in  pg_dump runs in the api_db service, which must be running.
-#   external  pg_dump runs in a throwaway PostgreSQL client container (the postgres image of .env), with the
-#             credentials in its environment, not on its command line. See guides/external-database.md.
+#   external  pg_dump runs in a temporary PostgreSQL client container (the postgres image of .env), which
+#             connects with the DATABASE_URL of configs/api.env. See guides/external-database.md.
 #
 # The archive has the same format in both modes. If the dump fails, the incomplete archive is deleted.
 #
@@ -39,7 +39,7 @@ cd "$(dirname "$0")"/..
 # shellcheck source=scripts/lib/database.sh
 source scripts/lib/database.sh
 if is_external_database; then
-    # A throwaway client container dumps the external database (credentials in its environment).
+    # A temporary client container dumps the external database.
     export_libpq_env "$(current_database_url)" "$(env_file_value configs/api.env DATABASE_SSL_REQUIRE)"
     pg_client_init
 fi

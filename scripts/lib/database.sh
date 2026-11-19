@@ -93,9 +93,8 @@ url_decode() {
 }
 
 # export_libpq_env URL SSL_REQUIRE: exports PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE, PGSSLMODE and
-# PGSSLROOTCERT for URL, SSL_REQUIRE being the DATABASE_SSL_REQUIRE of configs/api.env. Clients then get the
-# credentials from their environment, not from their command line, which `ps` shows.
-# TLS follows dj-database-url, like the api: SSL_REQUIRE True forces sslmode=require.
+# PGSSLROOTCERT for URL, SSL_REQUIRE being the DATABASE_SSL_REQUIRE of configs/api.env. PG_CLIENT passes them to
+# the client container. TLS follows dj-database-url, like the api: SSL_REQUIRE True forces sslmode=require.
 export_libpq_env() {
   local url=$1 ssl_require=$2 userinfo hostport query option key value
   if [[ "$url" == *\\* ]] \
@@ -135,7 +134,7 @@ export_libpq_env() {
   export PGHOST PGPORT PGUSER PGPASSWORD PGDATABASE PGSSLMODE
 }
 
-# pg_client_init: sets PG_CLIENT, a throwaway PostgreSQL client container (the postgres image of .env) that
+# pg_client_init: sets PG_CLIENT, a temporary PostgreSQL client container (the postgres image of .env) that
 # connects with the variables of export_libpq_env, and PG_TOOLS, the same image without them.
 pg_client_init() {
   local image
