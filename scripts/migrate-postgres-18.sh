@@ -80,7 +80,8 @@ fi
 grep -q '^POSTGRES_TAG=18' .env && grep -q "$NEW_DIR:/var/lib/postgresql$" docker-compose.yml \
     || fail ".env and docker-compose.yml are not the PostgreSQL 18 version. Run 'git pull' first."
 
-$COMPOSE_COMMAND exec -T proxy test -s /etc/nginx/maintenance-gate.conf \
+# The proxy writes the 503 rule into its maintenance gate when MAINTENANCE_ON=true, and a comment otherwise.
+$COMPOSE_COMMAND exec -T proxy grep -q 'return 503' /etc/nginx/maintenance-gate.conf \
     || fail "maintenance mode is not on in the running proxy. Set MAINTENANCE_ON=true in configs/proxy.env,
 configs/front.env and configs/api.env, then run '$COMPOSE_COMMAND up -d --no-deps proxy front api'.
 Do not run a plain '$COMPOSE_COMMAND up -d': it would start api_db on an empty PostgreSQL 18 database."
